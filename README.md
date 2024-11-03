@@ -1,0 +1,2 @@
+# Talento
+Chess engine project.
