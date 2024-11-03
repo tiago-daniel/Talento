@@ -1,4 +1,6 @@
 CMakeLists.txt.user
+.clang-format
+.idea
 CMakeCache.txt
 CMakeFiles
 CMakeScripts
