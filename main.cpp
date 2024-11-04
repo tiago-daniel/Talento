@@ -1,6 +1,9 @@
 #include <iostream>
+#include "src/movegen.hpp"
 
 int main() {
-  std::cout << "Hello, World!" << std::endl;
+  initAllAttackTables();
+  MoveList moves;
+  MoveGen::kingMove(moves, a1, 1);
   return 0;
 }
