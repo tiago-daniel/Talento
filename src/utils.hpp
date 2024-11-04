@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <random>
+#include <iostream>
 
 typedef uint_fast64_t uint64;
 typedef uint_fast32_t uint32;
@@ -86,7 +87,7 @@ public:
     Move() = default;
 
     Move(Square origin, Square destination, MoveType type, Piece promotion = KNIGHT) {
-        this->actualMove = origin  * 2^0 + destination * 2^6 + type * 2^12 + (promotion -1) * 2^14;
+        actualMove = origin + (destination << 6) + (type << 12) + ((promotion - 1) << 14);
     }
 
     [[nodiscard]] Square getOrigin() const {
@@ -106,8 +107,56 @@ public:
     }
 
     bool operator==(const Move& other) const {
-        return (this->actualMove ==other.actualMove);
+        return (this->actualMove == other.actualMove);
     }
 };
+
+//PRINT STUFF
+
+inline std::string squareToString(Square square) {
+    char file = static_cast<char>('a' + (square % 8));
+    char rank = static_cast<char>('1' + (square / 8));
+
+    return std::string(1, file) + rank;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Square square) {
+    os << squareToString(square);
+    return os;
+}
+
+inline std::string pieceToString(Piece piece) {
+    switch (piece) {
+        case PAWN:
+            return "p";
+        case KNIGHT:
+            return "n";
+        case BISHOP:
+            return "b";
+        case ROOK:
+            return "r";
+        case QUEEN:
+            return "q";
+        case KING:
+            return "k";
+        default:
+            return "U";
+    }
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Piece& piece) {
+    os << pieceToString(piece);
+    return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Move& move) {
+    if (move.getType() != PROMOTION) {
+        os << move.getOrigin() << move.getDestination();
+    }
+    else {
+        os << move.getOrigin() << move.getDestination() << move.getPromotion();
+    }
+    return os;
+}
 
 #endif //UTILS_HPP

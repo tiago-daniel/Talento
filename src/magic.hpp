@@ -140,7 +140,7 @@ inline SMagic mRookTbl[64];
 inline uint64 rAttOcc[64][4096];
 inline uint64 bAttOcc[64][4096];
 
-inline uint64 find_magic(int sq, int bishop) {
+inline uint64 findMagic(int sq, int bishop) {
     uint64 mask, b[4096], a[4096], magic;
     uint64* used = bishop ? bAttOcc[sq] : rAttOcc[sq];
     int i, j, k, n, fail;
@@ -153,7 +153,7 @@ inline uint64 find_magic(int sq, int bishop) {
         a[i] = bishop ?  bishopAttack(sq, b[i]) : rookAttack(sq, b[i]);
     }
     for(k = 0; k < 100000000; k++) {
-        magic = randomuint64() ^ randomuint64() ^ randomuint64();
+        magic = randomuint64() & randomuint64() & randomuint64();
         if(countBits((mask * magic) & 0xFF00000000000000ULL) < 6) continue;
         for(i = 0; i < 4096; i++) used[i] = 0ULL;
         for(i = 0, fail = 0; !fail && i < (1 << n); i++) {
@@ -172,6 +172,15 @@ inline uint64 find_magic(int sq, int bishop) {
         }
     }
     return 0ULL;
+}
+
+inline void initMagics() {
+    for (int i = 0; i < 64; i++) {
+        findMagic(i, 1);
+    }
+    for (int i = 0; i < 64; i++) {
+        findMagic(i, 0);
+    }
 }
 
 inline uint64 bishopAttacks(uint64 occ, Square sq) {

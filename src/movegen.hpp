@@ -45,7 +45,7 @@ public:
         uint64 attackBitboard = kingAttacks[square];
 
         attackBitboard &= ~allies;
-        std::cout << Bitboard(attackBitboard) << std::endl;
+
         move(moves, square, attackBitboard, allies);
     }
 
