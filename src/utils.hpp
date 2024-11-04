@@ -5,6 +5,7 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
 
+#include <cassert>
 #include <cstdint>
 #include <random>
 #include <iostream>
@@ -16,6 +17,7 @@ typedef uint_fast8_t uint8;
 
 
 inline uint64 Bit(int n) {
+    assert(n < 64 and n >= 0);
     return 1ULL << n;
 }
 
@@ -38,11 +40,11 @@ enum Square {
 };
 
 enum Piece{
-    PAWN,
     KNIGHT,
     BISHOP,
     ROOK,
     QUEEN,
+    PAWN,
     KING,
     EMPTY
 };
@@ -87,7 +89,7 @@ public:
     Move() = default;
 
     Move(Square origin, Square destination, MoveType type, Piece promotion = KNIGHT) {
-        actualMove = origin + (destination << 6) + (type << 12) + ((promotion - 1) << 14);
+        actualMove = origin + (destination << 6) + (type << 12) + (promotion << 14);
     }
 
     [[nodiscard]] Square getOrigin() const {
@@ -103,7 +105,7 @@ public:
     }
 
    [[nodiscard]] Piece getPromotion() const {
-        return Piece(((actualMove >> 14) + 1) & 0b11);
+        return Piece((actualMove >> 14) & 0b11);
     }
 
     bool operator==(const Move& other) const {

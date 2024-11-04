@@ -191,6 +191,36 @@ inline uint64 bishopAttacks(uint64 occ, Square sq) {
     return aptr[occ];
 }
 
+inline uint64 whitePawnAttacks(uint64 occ, Square sq) {
+    uint64 result = 0ULL;
+    int file = sq % 8;
+    if (!(occ & Bit(sq + 8))) {
+        result |= Bit(sq + 8);
+    }
+    if (occ & Bit(sq + 9) and file + 1 <8) {
+        result |= Bit(sq + 9);
+    }
+    if (occ & Bit(sq + 7) and file - 1 >= 0) {
+        result |= Bit(sq + 7);
+    }
+    return result;
+}
+
+inline uint64 blackPawnAttacks(uint64 occ, Square sq) {
+    uint64 result = 0ULL;
+    int file = sq % 8;
+    if (!(occ & Bit(sq - 8))) {
+        result |= Bit(sq - 8);
+    }
+    if (occ & Bit(sq - 9) and file - 1 >= 0) {
+        result |= Bit(sq - 9);
+    }
+    if (occ & Bit(sq - 7) and file + 1 < 8) {
+        result |= Bit(sq - 7);
+    }
+    return result;
+}
+
 inline uint64 rookAttacks(uint64 occ, Square sq) {
     uint64* aptr = mRookTbl[sq].ptr;
     occ      &= mRookTbl[sq].mask;
