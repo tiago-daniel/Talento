@@ -11,6 +11,30 @@
 
 class MoveGen {
 public:
+    static void passantMove(MoveList &moves, Color player, Square square, Square passant) {
+        const auto destination = Square(player ? passant - 8 : passant + 8);
+        if(square == passant + 8 or square == passant - 8) {
+            moves.push(Move{square,destination, EN_PASSANT});
+        }
+    }
+    static void castleMove(MoveList &moves, Square square, int castling_rights) {
+        if (square == e1) {
+            if (castling_rights & 0b1) {
+                moves.push(Move{e1,h1, CASTLE});
+            }
+            if (castling_rights & 0b10) {
+                moves.push(Move{e1,a1, CASTLE});
+            }
+        }
+        else if (square == e8) {
+            if (castling_rights & 0b100) {
+                moves.push(Move{e8,h8, CASTLE});
+            }
+            if (castling_rights & 0b1000) {
+                moves.push(Move{e8,a8, CASTLE});
+            }
+        }
+    }
     static void pawnMove(MoveList &moves, Color player, Square square, uint64 allies, uint64 enemies) {
         uint64 attackBitboard = player ? blackPawnAttacks(allies|enemies, square) : whitePawnAttacks(allies|enemies, square);
 
