@@ -17,7 +17,7 @@ typedef uint_fast8_t uint8;
 
 
 inline uint64 Bit(int n) {
-    assert(n < 64 and n >= 0);
+    if (!(n < 64 and n >= 0)) return 0;
     return 1ULL << n;
 }
 
@@ -64,10 +64,10 @@ enum MoveType {
 
 struct StackType {
 private:
-    uint16 actualVal = 0;
+    uint32 actualVal = 0;
 public:
-    StackType(Square passant, int castlingRights, Piece captured) {
-        actualVal = passant + (castlingRights << 6) + (captured << 10);
+    StackType(Square passant, int castlingRights, Piece captured, int halfMove) {
+        actualVal = passant + (castlingRights << 6) + (captured << 10) + (halfMove << 13);
     }
 
     [[nodiscard]] Square getPassant() const {
@@ -80,6 +80,9 @@ public:
 
     [[nodiscard]] Piece getCaptured() const {
         return Piece((actualVal >> 10) & 0b111);
+    }
+    [[nodiscard]] int getHalfMove() const {
+        return int((actualVal >> 13) & 0b11111);
     }
 };
 

@@ -2,12 +2,14 @@
 #include <chrono>
 
 int main() {
-    auto game = Board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
+    auto game = Board("r3k2r/p2pq1P1/bn2pnp1/2pPN3/1p2Pp2/2N2Q1p/PP1BBPPP/R3K2R w KQkq c6 0 1");
     auto moves = game.pseudoLegalMoves();
     for (int i = 0; i < moves.getSize(); i++) {
-        std::cout << moves.getMoves()[i] << "\n";
+        if (moves.getMoves()[i].getType() == EN_PASSANT) {
+            game.makeMove(moves.getMoves()[i]);
+            game.unmakeMove(moves.getMoves()[i]);
+        }
     }
-    game.makeMove({g2,h3,NORMAL});
     moves = game.pseudoLegalMoves();
     for (int i = 0; i < moves.getSize(); i++) {
         std::cout << moves.getMoves()[i] << "\n";

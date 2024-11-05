@@ -88,7 +88,6 @@ public:
         board &= ~ally;
         while (board) {
             for (Piece p = KNIGHT; p <= QUEEN; p = Piece(p+1)) {
-                std::cout << p << std::endl;
                 moves.push(Move{static_cast<Square>(sq),
                     static_cast<Square>(__builtin_ctzll(board)), PROMOTION, p});
             }
