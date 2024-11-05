@@ -65,8 +65,8 @@ struct StackType {
 private:
     uint16 actualVal = 0;
 public:
-    StackType(Square passant, int castling_rights, Piece captured) {
-        actualVal = passant * 2^0 + castling_rights * 2^6 + captured * 2^10;
+    StackType(Square passant, int castlingRights, Piece captured) {
+        actualVal = passant + (castlingRights << 6) + (captured << 10);
     }
 
     [[nodiscard]] Square getPassant() const {
@@ -159,6 +159,56 @@ inline std::ostream& operator<<(std::ostream& os, const Move& move) {
         os << move.getOrigin() << move.getDestination() << move.getPromotion();
     }
     return os;
+}
+
+inline Square stringToSquare(const std::string& square_str) {
+    if (square_str.length() != 2) {
+        throw std::invalid_argument("Invalid square string: must be two characters long.");
+    }
+
+    // Convert file character to lowercase to handle uppercase inputs
+    char file_char = std::tolower(square_str[0]);
+    char rank_char = square_str[1];
+
+    // Validate file character ('a' to 'h')
+    if (file_char < 'a' || file_char > 'h') {
+        throw std::invalid_argument("Invalid file character in square string.");
+    }
+    int file = file_char - 'a';
+
+
+    // Validate rank character ('1' to '8')
+    if (rank_char < '1' || rank_char > '8') {
+        throw std::invalid_argument("Invalid rank character in square string.");
+    }
+    int rank = rank_char - '1';
+
+    // Calculate square index (0 to 63)
+    int square = rank * 8 + file;
+
+    return static_cast<Square>(square);
+}
+
+//HASHING
+
+inline uint64 transpositionTable[64][12]{};
+inline uint64 blackHash = 0;
+inline uint64 castleHash[4]{};
+inline uint64 passantHash[8]{};
+
+inline void initZobrist() {
+    for (auto &i : transpositionTable) {
+        for (auto &j : i) {
+            j = randomuint64();
+        }
+    }
+    blackHash = randomuint64();
+    for (auto &i : castleHash) {
+        i = randomuint64();
+    }
+    for (auto &i : passantHash) {
+        i = randomuint64();
+    }
 }
 
 #endif //UTILS_HPP

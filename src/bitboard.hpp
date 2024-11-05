@@ -11,6 +11,9 @@ class Bitboard {
 private:
     uint64 board = 0;
 public:
+
+    Bitboard() = default;
+
     explicit Bitboard(uint64 board) {
         this->board = board;
     }
