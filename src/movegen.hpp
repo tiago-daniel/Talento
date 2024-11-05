@@ -12,7 +12,7 @@ class MoveGen {
 public:
     static void passantMove(MoveList &moves, Color player, Square square, Square passant) {
         const auto destination = Square(player ? passant - 8 : passant + 8);
-        if(square == passant + 8 or square == passant - 8) {
+        if(square == passant + 1 or square == passant - 1) {
             moves.push(Move{square,destination, EN_PASSANT});
         }
     }
