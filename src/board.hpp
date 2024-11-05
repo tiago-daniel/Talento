@@ -114,8 +114,9 @@ public:
         hash^=transpositionTable[square][pieces[square] + 6 * colors[BLACK].hasBit(square)];
     }
 
-    [[nodiscard]] MoveList pseudoLegalMoves() const {
+    [[nodiscard]] MoveList pseudoLegalMoves() {
         auto moves = MoveList();
+        if (result != 2) return moves;
         auto allies = this->colors[currentPlayer].getBoard();
         auto enemies = this->colors[currentPlayer xor 1].getBoard();
         for (int i = 0 ; i < 64 ; i++) {
@@ -143,6 +144,14 @@ public:
                     default:
                         break;
                 }
+            }
+        }
+        if (moves.getSize() == 0) {
+            if (kingCheck()) {
+                result = currentPlayer == WHITE ? -1 : 1;
+            }
+            else {
+                result = 0;
             }
         }
         return moves;
@@ -348,5 +357,13 @@ public:
         hash ^= blackHash;
         hashHistory[hashIndex++] = hash;
         stack.emplace_back(passant, castlingRights, capturedPiece);
+        if (drawCount >= 50 or insufficientMaterial()) {
+            result = 0;
+        }
+        int count = 1;
+        for (int i = hashIndex - 2; i >= hashIndex - 1 - drawCount; i--) {
+            if (hashHistory[i] == hash) {count++;}
+            if (count >= 3) result = 0;
+        }
     }
 };
