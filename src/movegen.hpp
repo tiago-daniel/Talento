@@ -7,7 +7,6 @@
 
 #include "movelist.hpp"
 #include "magic.hpp"
-#include "bitboard.hpp"
 
 class MoveGen {
 public:

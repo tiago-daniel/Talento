@@ -63,10 +63,9 @@ inline int pop_1st_bit(uint64 *b) {
 }
 
 inline uint64 index_to_uint64(int index, int bits, uint64 m) {
-    int i, j;
     uint64 result = 0ULL;
-    for(i = 0; i < bits; i++) {
-        j = pop_1st_bit(&m);
+    for(int i = 0; i < bits; i++) {
+        int j = pop_1st_bit(&m);
         if(index & (1 << i)) result |= (1ULL << j);
     }
     return result;
@@ -141,23 +140,23 @@ inline uint64 rAttOcc[64][4096];
 inline uint64 bAttOcc[64][4096];
 
 inline uint64 findMagic(int sq, int bishop) {
-    uint64 mask, b[4096], a[4096], magic;
+    uint64 b[4096], a[4096];
     uint64* used = bishop ? bAttOcc[sq] : rAttOcc[sq];
-    int i, j, k, n, fail;
-    int m = bishop ? BISHOP_BITS[sq] : ROOK_BITS[sq];
-    mask = bishop ? bishopMask(sq) : rookMask(sq);
-    n = countBits(mask);
+    int i, fail;
+    const int m = bishop ? BISHOP_BITS[sq] : ROOK_BITS[sq];
+    uint64 mask = bishop ? bishopMask(sq) : rookMask(sq);
+    int n = countBits(mask);
 
     for(i = 0; i < (1 << n); i++) {
         b[i] = index_to_uint64(i, n, mask);
         a[i] = bishop ?  bishopAttack(sq, b[i]) : rookAttack(sq, b[i]);
     }
-    for(k = 0; k < 100000000; k++) {
-        magic = randomuint64() & randomuint64() & randomuint64();
+    for(int k = 0; k < 100000000; k++) {
+        uint64 magic = randomuint64() & randomuint64() & randomuint64();
         if(countBits((mask * magic) & 0xFF00000000000000ULL) < 6) continue;
         for(i = 0; i < 4096; i++) used[i] = 0ULL;
         for(i = 0, fail = 0; !fail && i < (1 << n); i++) {
-            j = static_cast<int>((b[i] * magic) >> m);
+            int j = static_cast<int>((b[i] * magic) >> m);
             if(used[j] == 0ULL) used[j] = a[i];
             else if(used[j] != a[i]) fail = 1;
         }
@@ -196,6 +195,9 @@ inline uint64 whitePawnAttacks(uint64 occ, Square sq) {
     int file = sq % 8;
     if (!(occ & Bit(sq + 8))) {
         result |= Bit(sq + 8);
+        if (!(occ & Bit(sq + 16)) and sq / 8 == 1) {
+            result |= Bit(sq + 16);
+        }
     }
     if (occ & Bit(sq + 9) and file + 1 <8) {
         result |= Bit(sq + 9);
@@ -211,6 +213,9 @@ inline uint64 blackPawnAttacks(uint64 occ, Square sq) {
     int file = sq % 8;
     if (!(occ & Bit(sq - 8))) {
         result |= Bit(sq - 8);
+        if (!(occ & Bit(sq - 16)) and sq / 8 == 6) {
+            result |= Bit(sq - 16);
+        }
     }
     if (occ & Bit(sq - 9) and file - 1 >= 0) {
         result |= Bit(sq - 9);
