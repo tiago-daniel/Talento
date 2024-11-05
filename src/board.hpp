@@ -68,6 +68,7 @@ public:
                 this->colors[color].addBit(square);
                 this->boards[pieceType].addBit(square);
                 this->materials[color] += values[pieceType];
+                hashSquare(hash, Square(square));
                 square++;
             }
         }
@@ -106,6 +107,11 @@ public:
         this->stack.emplace_back(newPassant, canCastle, EMPTY);
         if (!drawCount.empty()) this->drawCount = std::stoi(drawCount);
         if (!fullMove.empty()) this->fullMove = std::stoi(fullMove);
+    }
+
+    void hashSquare(uint64 &hash, const Square square) const {
+        if (pieces[square] == EMPTY or square == noSquare) {return;}
+        hash^=transpositionTable[square][pieces[square] + 6 * colors[BLACK].hasBit(square)];
     }
 
     [[nodiscard]] MoveList pseudoLegalMoves() const {
@@ -152,5 +158,195 @@ public:
 
     [[nodiscard]] int getCaptured() const {
         return stack.back().getCaptured();
+    }
+
+    uint64 squareAttackers(const Square square) {
+        uint64 res  = 0;
+        auto allyColor = colors[currentPlayer].getBoard();
+        auto enemyColor = colors[currentPlayer ^ 1].getBoard();
+        if (square == stack.back().getPassant()) {
+            if (square % 8 > (square - 1)% 8 ) res |= Bit(square - 1) & enemyColor & boards[PAWN].getBoard();
+            if (square % 8 < (square + 1)% 8 ) res |= Bit(square + 1) & enemyColor & boards[PAWN].getBoard();
+        }
+        res |= kingAttacks[square] & enemyColor & boards[KING].getBoard();
+        res |= knightAttacks[square] & enemyColor & boards[KNIGHT].getBoard();
+        res |= ( currentPlayer == WHITE ? whitePawnAttacks(~Bit(square + 8),square) : blackPawnAttacks(~Bit(square - 8),square)) & enemyColor & boards[PAWN].getBoard();
+        res |= rookAttacks(allyColor|enemyColor,square) & enemyColor & (boards[QUEEN].getBoard() | boards[ROOK].getBoard());
+        res |= bishopAttacks(allyColor|enemyColor,square) & enemyColor & (boards[QUEEN].getBoard() | boards[BISHOP].getBoard());
+        return res;
+    }
+
+    [[nodiscard]] bool isSquareAttacked(Square square) {
+        return (squareAttackers(square) != 0);
+    }
+
+    [[nodiscard]] Square kingSquare() const {
+        for (int i = 0 ; i < 64 ; i++) {
+            if (this->colors[currentPlayer].hasBit(i)) {
+                if (this->boards[KING].hasBit(i)) {return Square(i);}
+            }
+        }
+        assert(false);
+    }
+
+    [[nodiscard]] bool kingCheck() {
+        return isSquareAttacked(kingSquare());
+    }
+
+    [[nodiscard]] bool insufficientMaterial() const {
+        if (this->boards[PAWN].getBoard() != 0) {
+            return false;
+        }
+        if (materials[WHITE] < 4 and materials[BLACK] < 4) {
+            return true;
+        }
+        return false;
+    }
+
+    void makeMove(const Move& move) {
+        fullMove = (currentPlayer == WHITE ) ? fullMove : fullMove + 1;
+        auto origin = move.getOrigin();
+        auto destination = move.getDestination();
+        auto movingPiece = pieces[origin];
+        auto oldPassant = getPassant();
+        auto capturedPiece = pieces[destination];
+        auto castlingRights = getCastlingRights();
+        if (oldPassant != a1) hash^=passantHash[oldPassant % 8];
+        auto passant = a1;
+        if (move.getType() == CASTLE) {
+            if (destination == origin + 2) {
+                hashSquare(hash, origin);
+                hashSquare(hash, Square(origin + 3));
+                colors[currentPlayer].removeBit(origin);
+                boards[KING].removeBit(origin);
+                pieces[origin] = EMPTY;
+                colors[currentPlayer].addBit(origin + 1);
+                boards[ROOK].addBit(origin + 1);
+                pieces[origin + 1] = ROOK;
+                colors[currentPlayer].addBit(origin + 2);
+                boards[KING].addBit(origin + 2);
+                pieces[origin + 2] = KING;
+                colors[currentPlayer].removeBit(origin + 3);
+                boards[ROOK].removeBit(origin + 3);
+                pieces[origin + 3] = EMPTY;
+                hashSquare(hash, Square(origin + 1));
+                hashSquare(hash, Square(origin + 2));
+            }
+            else {
+                hashSquare(hash, origin);
+                hashSquare(hash, Square(origin - 4));
+                colors[currentPlayer].removeBit(origin);
+                boards[KING].removeBit(origin);
+                pieces[origin] = EMPTY;
+                colors[currentPlayer].addBit(origin - 1);
+                boards[ROOK].addBit(origin - 1);
+                pieces[origin - 1] = ROOK;
+                colors[currentPlayer].addBit(origin - 2);
+                boards[KING].addBit(origin - 2);
+                pieces[origin - 2] = KING;
+                colors[currentPlayer].removeBit(origin - 4);
+                boards[ROOK].removeBit(origin - 4);
+                pieces[origin - 4] = EMPTY;
+                hashSquare(hash, Square(origin - 1));
+                hashSquare(hash, Square(origin - 2));
+            }
+            capturedPiece = EMPTY;
+            drawCount++;
+        }
+        else if (move.getType() == EN_PASSANT) {
+            materials[currentPlayer ^ 1] -= 1;
+            hashSquare(hash, origin);
+            hashSquare(hash, oldPassant);
+            capturedPiece = PAWN;
+            colors[currentPlayer].removeBit(origin);
+            boards[PAWN].removeBit(origin);
+            pieces[origin] = EMPTY;
+            colors[currentPlayer].addBit(destination);
+            boards[PAWN].addBit(destination);
+            pieces[destination] = PAWN;
+            colors[currentPlayer ^ 1].removeBit(oldPassant);
+            boards[PAWN].removeBit(oldPassant);
+            pieces[oldPassant] = EMPTY;
+            drawCount = 0;
+            hashSquare(hash, destination);
+        }
+        else if (move.getType() == PROMOTION) {
+            materials[currentPlayer ^ 1] -= values[capturedPiece];
+            hashSquare(hash, origin);
+            hashSquare(hash, destination);
+            auto promot = move.getPromotion();
+            materials[currentPlayer] += values[promot]-1;
+            colors[currentPlayer].removeBit(origin);
+            boards[PAWN].removeBit(origin);
+            pieces[origin] = EMPTY;
+            colors[currentPlayer].addBit(destination);
+            pieces[destination] = promot;
+            if (capturedPiece != EMPTY) {
+                colors[currentPlayer ^ 1].removeBit(destination);
+                boards[capturedPiece].removeBit(destination);
+                drawCount = 0;
+            }
+            else {
+                drawCount++;
+            }
+            boards[promot].addBit(destination);
+            hashSquare(hash, destination);
+        }
+        else {
+            materials[currentPlayer ^ 1] -= values[capturedPiece];
+            hashSquare(hash, origin);
+            hashSquare(hash, destination);
+            colors[currentPlayer].removeBit(origin);
+            boards[movingPiece].removeBit(origin);
+            pieces[origin] = EMPTY;
+            colors[currentPlayer].addBit(destination);
+            pieces[destination] = movingPiece;
+            if (capturedPiece != EMPTY) {
+                colors[currentPlayer ^ 1].removeBit(destination);
+                boards[capturedPiece].removeBit(destination);
+                drawCount = 0;
+            }
+            else {
+                drawCount++;
+            }
+            boards[movingPiece].addBit(destination);
+            if (movingPiece == PAWN and (origin == destination + 16 or origin == destination - 16)) {
+                passant = destination;
+                hash^=passantHash[destination % 8];
+            }
+            hashSquare(hash, destination);
+        }
+        if (currentPlayer == WHITE) {
+            if (castlingRights & 0b1) {
+                if (pieces[e1] != KING or pieces[h1] != ROOK or !colors[WHITE].hasBit(h1)) {
+                    castlingRights &= ~0b1;
+                    hash ^= castleHash[0];
+                }
+            }
+            if (castlingRights & 0b10) {
+                if (pieces[e1] != KING or pieces[a1] != ROOK or !colors[WHITE].hasBit(a1)) {
+                    castlingRights &= ~0b10;
+                    hash ^= castleHash[1];
+                }
+            }
+        }
+        else {
+            if (castlingRights & 0b100) {
+                if (pieces[e8] != KING or pieces[h8] != ROOK or !colors[BLACK].hasBit(h8)) {
+                    castlingRights &= ~0b100;
+                    hash ^= castleHash[2];
+                }
+            }
+            if (castlingRights & 0b01000) {
+                if (pieces[e8] != KING or pieces[a8] != ROOK or !colors[BLACK].hasBit(a8)) {
+                    castlingRights &= ~0b1000;
+                    hash ^= castleHash[3];
+                }
+            }
+        }
+        currentPlayer ^= 1;
+        hash ^= blackHash;
+        hashHistory[hashIndex++] = hash;
+        stack.emplace_back(passant, castlingRights, capturedPiece);
     }
 };
