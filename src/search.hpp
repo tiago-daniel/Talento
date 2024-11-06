@@ -7,9 +7,12 @@
 
 #include "board.hpp"
 
-class search {
-
+class Search {
+public:
     static uint64 perft(Board& pos, int depth) {
+        return perftAux(pos, depth, depth);
+    }
+    static uint64 perftAux(Board& pos, int depth, int initial) {
         if (depth == 0) {
             return 1ULL;
         }
@@ -21,14 +24,13 @@ class search {
             auto move = moves.getMoves()[i];
             if (!pos.isLegal(move)) continue;
             pos.makeMove(move);
-            curr = perft(pos, depth - 1);
+            curr = perftAux(pos, depth - 1, initial);
             pos.unmakeMove(move);
             nodes += curr;
-            std::cout << move << " - " << curr << std::endl;
+            if (depth == initial) std::cout << move << " - " << curr << std::endl;
         }
         return nodes;
     }
-
 };
 
 

@@ -21,7 +21,16 @@ private:
     std::array<Bitboard, 2> colors = {};
     std::array<Bitboard, 6> boards = {};
     std::array<int, 2> materials = {};
-    std::array<Piece, 64> pieces = {EMPTY};
+    std::array<Piece, 64> pieces = {
+        EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,
+        EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,
+        EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,
+        EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,
+        EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,
+        EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,
+        EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,
+        EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY
+    };
     uint64 hash = 0;
     std::array<uint64,1024> hashHistory{};
     int hashIndex = 0;
@@ -108,6 +117,10 @@ public:
         if (!fullMove.empty()) this->fullMove = std::stoi(fullMove);
     }
 
+    [[nodiscard]] std::array<Bitboard, 6>& getBoards() {
+        return this->boards;
+    }
+
     void hashSquare(uint64 &hash, const Square square) const {
         if (pieces[square] == EMPTY or square == noSquare) {return;}
         hash^=transpositionTable[square][pieces[square] + 6 * colors[BLACK].hasBit(square)];
@@ -183,7 +196,7 @@ public:
         }
         res |= kingAttacks[square] & enemyColor & boards[KING].getBoard();
         res |= knightAttacks[square] & enemyColor & boards[KNIGHT].getBoard();
-        res |= ( player == WHITE ? whitePawnAttacks(~Bit(square + 8),square) : blackPawnAttacks(~Bit(square - 8),square)) & enemyColor & boards[PAWN].getBoard();
+        res |= ( player == WHITE ? whitePawnAttacks(~Bit(square - 8),square) : blackPawnAttacks(~Bit(square + 8),square)) & enemyColor & boards[PAWN].getBoard();
         res |= rookAttacks(allyColor|enemyColor,square) & enemyColor & (boards[QUEEN].getBoard() | boards[ROOK].getBoard());
         res |= bishopAttacks(allyColor|enemyColor,square) & enemyColor & (boards[QUEEN].getBoard() | boards[BISHOP].getBoard());
         return res;
@@ -288,6 +301,14 @@ public:
             materials[currentPlayer ^ 1] -= values[capturedPiece];
             hashSquare(hash, origin);
             hashSquare(hash, destination);
+            if (capturedPiece != EMPTY) {
+                colors[currentPlayer ^ 1].removeBit(destination);
+                boards[capturedPiece].removeBit(destination);
+                halfMove = 0;
+            }
+            else {
+                halfMove++;
+            }
             auto promot = move.getPromotion();
             materials[currentPlayer] += values[promot]-1;
             colors[currentPlayer].removeBit(origin);
@@ -295,14 +316,6 @@ public:
             pieces[origin] = EMPTY;
             colors[currentPlayer].addBit(destination);
             pieces[destination] = promot;
-            if (capturedPiece != EMPTY) {
-                colors[currentPlayer ^ 1].removeBit(destination);
-                boards[capturedPiece].removeBit(destination);
-                halfMove = 0;
-            }
-            else {
-                halfMove++;
-            }
             boards[promot].addBit(destination);
             hashSquare(hash, destination);
         }
@@ -310,19 +323,19 @@ public:
             materials[currentPlayer ^ 1] -= values[capturedPiece];
             hashSquare(hash, origin);
             hashSquare(hash, destination);
-            colors[currentPlayer].removeBit(origin);
-            boards[movingPiece].removeBit(origin);
-            pieces[origin] = EMPTY;
-            colors[currentPlayer].addBit(destination);
-            pieces[destination] = movingPiece;
             if (capturedPiece != EMPTY) {
-                colors[currentPlayer ^ 1].removeBit(destination);
                 boards[capturedPiece].removeBit(destination);
                 halfMove = 0;
             }
             else {
                 halfMove++;
             }
+            colors[currentPlayer ^ 1].removeBit(destination);
+            colors[currentPlayer].removeBit(origin);
+            boards[movingPiece].removeBit(origin);
+            pieces[origin] = EMPTY;
+            colors[currentPlayer].addBit(destination);
+            pieces[destination] = movingPiece;
             boards[movingPiece].addBit(destination);
             if (movingPiece == PAWN and (origin == destination + 16 or origin == destination - 16)) {
                 passant = destination;
@@ -468,7 +481,7 @@ public:
                 return true;
             }
             if (isSquareAttacked(origin,currentPlayer) or isSquareAttacked(Square(origin - 1),currentPlayer)
-                or isSquareAttacked(destination,currentPlayer) or isSquareAttacked(Square(origin - 3),currentPlayer)) {
+                or isSquareAttacked(destination,currentPlayer)) {
                 return false;
                 }
             return true;
@@ -480,5 +493,9 @@ public:
         }
         unmakeMove(move);
         return true;
+    }
+
+    [[nodiscard]] std::array<Bitboard, 2>& getColors() {
+        return this->colors;
     }
 };

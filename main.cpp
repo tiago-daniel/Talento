@@ -1,18 +1,16 @@
-#include "src/board.hpp"
+#include "src/search.hpp"
 #include <chrono>
+#include <unistd.h>
 
 int main() {
-    auto game = Board("r3k2r/p2pq1P1/bn2pnp1/2pPN3/1p2Pp2/2N2Q1p/PP1BBPPP/R3K2R w KQkq c6 0 1");
-    auto moves = game.pseudoLegalMoves();
-    for (int i = 0; i < moves.getSize(); i++) {
-        if (moves.getMoves()[i].getType() == EN_PASSANT) {
-            game.makeMove(moves.getMoves()[i]);
-            game.unmakeMove(moves.getMoves()[i]);
-        }
-    }
-    moves = game.pseudoLegalMoves();
-    for (int i = 0; i < moves.getSize(); i++) {
-        std::cout << moves.getMoves()[i] << "\n";
-    }
+    auto start = std::chrono::high_resolution_clock::now();
+    auto game = Board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
+    auto nodes = Search::perft(game, 4);
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    std::cout << "Nodes : " << nodes << std::endl;
+    std::cout << "Time taken : " << duration.count() / 1000.0 << "seconds" << std::endl;
+    std::cout << "MNps : " << (nodes / 1000 / duration.count())  << std::endl;
+    sleep(5);
     return 0;
 }
