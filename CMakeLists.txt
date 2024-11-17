@@ -14,4 +14,6 @@ add_executable(Talento main.cpp
         src/magic.hpp
         src/movegen.hpp
         src/movelist.hpp
-        )
+        src/board.hpp
+        src/search.hpp
+)

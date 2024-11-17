@@ -11,6 +11,9 @@ class Bitboard {
 private:
     uint64 board = 0;
 public:
+
+    Bitboard() = default;
+
     explicit Bitboard(uint64 board) {
         this->board = board;
     }
@@ -35,6 +38,20 @@ public:
             os << std::endl;
         }
         return os;
+    }
+
+    Bitboard operator^(const Bitboard& other) const {
+        return Bitboard(this->board ^ other.board);
+    }
+    void operator^=(const Bitboard& other) {
+        this->board ^= other.board;
+    }
+
+    Bitboard operator^(const uint64& other) const {
+        return Bitboard(this->board ^ other);
+    }
+    void operator^=(const uint64& other) {
+        this->board ^= other;
     }
 };
 

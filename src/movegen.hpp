@@ -12,25 +12,25 @@ class MoveGen {
 public:
     static void passantMove(MoveList &moves, Color player, Square square, Square passant) {
         const auto destination = Square(player ? passant - 8 : passant + 8);
-        if(square == passant + 1 or square == passant - 1) {
+        if((square == passant + 1 and square % 8 > passant % 8) or (square == passant - 1 and square % 8 < passant % 8)) {
             moves.push(Move{square,destination, EN_PASSANT});
         }
     }
-    static void castleMove(MoveList &moves, Square square, int castling_rights) {
+    static void castleMove(MoveList &moves, Square square, int castling_rights, uint64 allies) {
         if (square == e1) {
-            if (castling_rights & 0b1) {
-                moves.push(Move{e1,h1, CASTLE});
+            if (castling_rights & 0b1 && !(allies & Bit(f1)) && !(allies & Bit(g1))) {
+                moves.push(Move{e1,g1, CASTLE});
             }
-            if (castling_rights & 0b10) {
-                moves.push(Move{e1,a1, CASTLE});
+            if (castling_rights & 0b10 && !(allies & Bit(b1))  && !(allies & Bit(c1)) && !(allies & Bit(d1))) {
+                moves.push(Move{e1,c1, CASTLE});
             }
         }
         else if (square == e8) {
-            if (castling_rights & 0b100) {
-                moves.push(Move{e8,h8, CASTLE});
+            if (castling_rights & 0b100 && !(allies & Bit(f8)) && !(allies & Bit(g8))) {
+                moves.push(Move{e8,g8, CASTLE});
             }
-            if (castling_rights & 0b1000) {
-                moves.push(Move{e8,a8, CASTLE});
+            if (castling_rights & 0b1000  && !(allies & Bit(b8))  && !(allies & Bit(c8)) && !(allies & Bit(d8))) {
+                moves.push(Move{e8,c8, CASTLE});
             }
         }
     }
@@ -88,7 +88,6 @@ public:
         board &= ~ally;
         while (board) {
             for (Piece p = KNIGHT; p <= QUEEN; p = Piece(p+1)) {
-                std::cout << p << std::endl;
                 moves.push(Move{static_cast<Square>(sq),
                     static_cast<Square>(__builtin_ctzll(board)), PROMOTION, p});
             }
