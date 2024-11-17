@@ -39,6 +39,20 @@ public:
         }
         return os;
     }
+
+    Bitboard operator^(const Bitboard& other) const {
+        return Bitboard(this->board ^ other.board);
+    }
+    void operator^=(const Bitboard& other) {
+        this->board ^= other.board;
+    }
+
+    Bitboard operator^(const uint64& other) const {
+        return Bitboard(this->board ^ other);
+    }
+    void operator^=(const uint64& other) {
+        this->board ^= other;
+    }
 };
 
 

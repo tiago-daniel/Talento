@@ -126,6 +126,43 @@ public:
         hash^=transpositionTable[square][pieces[square] + 6 * colors[BLACK].hasBit(square)];
     }
 
+    [[nodiscard]] bool getCurrentPlayer() const {
+        return this->currentPlayer;
+    }
+
+    bool checkIntegrity() {
+        for (int i = 0; i < 64; i++) {
+            if (pieces[i] != EMPTY) {
+                for (int j = 0; j < 6; j++) {
+                    if (j == pieces[i] and !boards[j].hasBit(i)) {
+                        return false;
+                    }
+                    if (boards[j].hasBit(i)) {
+                        if  (!(colors[WHITE].hasBit(i) ^ colors[BLACK].hasBit(i))) {
+                           return false;
+                        }
+                        if (j != pieces[i]) {
+                            std::cout << Square(i) << " Board of piece " << j << " has this piece but on mailbox it's " << pieces[i]
+                            << std::endl;
+                            return false;
+                        }
+                    }
+                }
+            }
+            else {
+                if (colors[WHITE].hasBit(i) || colors[BLACK].hasBit(i)) {
+                   return false;
+                }
+                for (int j = 0; j < 6; j++) {
+                    if (boards[j].hasBit(i)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
     [[nodiscard]] MoveList pseudoLegalMoves() {
         auto moves = MoveList();
         if (result != 2) return moves;
@@ -136,24 +173,24 @@ public:
                 switch (pieces[i]) {
                     case PAWN:
                         MoveGen::pawnMove(moves, static_cast<Color>(currentPlayer), static_cast<Square>(i) ,  allies, enemies);
-                    if (getPassant() != noSquare) MoveGen::passantMove(moves, static_cast<Color>(currentPlayer), static_cast<Square>(i) ,  getPassant());
-                    break;
+                        if (getPassant() != noSquare) MoveGen::passantMove(moves, static_cast<Color>(currentPlayer), static_cast<Square>(i) ,  getPassant());
+                        break;
                     case KNIGHT:
                         MoveGen::knightMove(moves, static_cast<Square>(i), allies);
-                    break;
+                        break;
                     case BISHOP:
                         MoveGen::bishopMove(moves,static_cast<Square>(i), allies,enemies);
-                    break;
+                        break;
                     case ROOK:
                         MoveGen::rookMove(moves,static_cast<Square>(i), allies,enemies);
-                    break;
+                        break;
                     case QUEEN:
                         MoveGen::queenMove(moves,static_cast<Square>(i), allies,enemies);
-                    break;
+                        break;
                     case KING:
                         MoveGen::kingMove(moves,static_cast<Square>(i), allies);
-                    MoveGen::castleMove(moves,static_cast<Square>(i), stack.back().getCastlingRights(), allies);
-                    break;
+                        MoveGen::castleMove(moves,static_cast<Square>(i), stack.back().getCastlingRights(), allies);
+                        break;
                     default:
                         break;
                 }
@@ -166,6 +203,15 @@ public:
             else {
                 result = 0;
             }
+        }
+        return moves;
+    }
+
+    [[nodiscard]] MoveList allMoves() {
+        auto moves = MoveList();
+        auto oldMoves = pseudoLegalMoves();
+        for (int i = 0; i < oldMoves.getSize();i++) {
+            if (isLegal(moves.getMoves()[i])) moves.push(moves.getMoves()[i]);
         }
         return moves;
     }
@@ -229,265 +275,369 @@ public:
         return false;
     }
 
+    void updateBitboard(Square sq, Piece piece, bool color) {
+        uint64 mask = Bit(sq);
+        boards[piece] ^= mask;
+        colors[color] ^= mask;
+    }
+
+    void makeCastleMove(Square from, Square to) {
+        hashSquare(hash,from);
+        if (from == e1) {
+            if (to == g1) {
+                hashSquare(hash,h1);
+                colors[WHITE].removeBit(h1);
+                colors[WHITE].removeBit(e1);
+                colors[WHITE].addBit(f1);
+                colors[WHITE].addBit(g1);
+                boards[ROOK].removeBit(h1);
+                boards[ROOK].addBit(f1);
+                boards[KING].removeBit(e1);
+                boards[KING].addBit(g1);
+                pieces[e1] = EMPTY;
+                pieces[h1] = EMPTY;
+                pieces[f1] = ROOK;
+                pieces[g1] = KING;
+                hashSquare(hash,to);
+                hashSquare(hash,f1);
+                return;
+            }
+            hashSquare(hash,a1);
+            colors[WHITE].removeBit(a1);
+            colors[WHITE].removeBit(e1);
+            colors[WHITE].addBit(c1);
+            colors[WHITE].addBit(d1);
+            boards[ROOK].removeBit(a1);
+            boards[ROOK].addBit(d1);
+            boards[KING].removeBit(e1);
+            boards[KING].addBit(c1);
+            pieces[e1] = EMPTY;
+            pieces[a1] = EMPTY;
+            pieces[d1] = ROOK;
+            pieces[c1] = KING;
+            hashSquare(hash,to);
+            hashSquare(hash,d1);
+        }
+        else {
+            if (to == g8) {
+                hashSquare(hash,h8);
+                colors[BLACK].removeBit(h8);
+                colors[BLACK].removeBit(e8);
+                colors[BLACK].addBit(f8);
+                colors[BLACK].addBit(g8);
+                boards[ROOK].removeBit(h8);
+                boards[ROOK].addBit(f8);
+                boards[KING].removeBit(e8);
+                boards[KING].addBit(g8);
+                pieces[e8] = EMPTY;
+                pieces[h8] = EMPTY;
+                pieces[f8] = ROOK;
+                pieces[g8] = KING;
+                hashSquare(hash,to);
+                hashSquare(hash,f8);
+                return;
+            }
+            hashSquare(hash,a8);
+            colors[BLACK].removeBit(a8);
+            colors[BLACK].removeBit(e8);
+            colors[BLACK].addBit(c8);
+            colors[BLACK].addBit(d8);
+            boards[ROOK].removeBit(a8);
+            boards[ROOK].addBit(d8);
+            boards[KING].removeBit(e8);
+            boards[KING].addBit(c8);
+            pieces[e8] = EMPTY;
+            pieces[a8] = EMPTY;
+            pieces[d8] = ROOK;
+            pieces[c8] = KING;
+            hashSquare(hash,to);
+            hashSquare(hash,d8);
+        }
+    }
+
+    void unmakeCastleMove(Square from, Square to) {
+        if (from == e1) {
+            if (to == g1) {
+                colors[WHITE].addBit(h1);
+                colors[WHITE].addBit(e1);
+                colors[WHITE].removeBit(f1);
+                colors[WHITE].removeBit(g1);
+                boards[ROOK].addBit(h1);
+                boards[ROOK].removeBit(f1);
+                boards[KING].addBit(e1);
+                boards[KING].removeBit(g1);
+                pieces[e1] = KING;
+                pieces[h1] = ROOK;
+                pieces[f1] = EMPTY;
+                pieces[g1] = EMPTY;
+                return;
+            }
+            else if (to == c1) {
+                colors[WHITE].addBit(a1);
+                colors[WHITE].addBit(e1);
+                colors[WHITE].removeBit(c1);
+                colors[WHITE].removeBit(d1);
+                boards[ROOK].addBit(a1);
+                boards[ROOK].removeBit(d1);
+                boards[KING].addBit(e1);
+                boards[KING].removeBit(c1);
+                pieces[e1] = KING;
+                pieces[a1] = ROOK;
+                pieces[d1] = EMPTY;
+                pieces[c1] = EMPTY;
+                return;
+            }
+            assert(false);
+        }
+        else {
+            if (to == g8) {
+                colors[BLACK].addBit(h8);
+                colors[BLACK].addBit(e8);
+                colors[BLACK].removeBit(f8);
+                colors[BLACK].removeBit(g8);
+                boards[ROOK].addBit(h8);
+                boards[ROOK].removeBit(f8);
+                boards[KING].addBit(e8);
+                boards[KING].removeBit(g8);
+                pieces[e8] = KING;
+                pieces[h8] = ROOK;
+                pieces[f8] = EMPTY;
+                pieces[g8] = EMPTY;
+                return;
+            }
+            else if (to == c8) {
+                colors[BLACK].addBit(a8);
+                colors[BLACK].addBit(e8);
+                colors[BLACK].removeBit(c8);
+                colors[BLACK].removeBit(d8);
+                boards[ROOK].addBit(a8);
+                boards[ROOK].removeBit(d8);
+                boards[KING].addBit(e8);
+                boards[KING].removeBit(c8);
+                pieces[e8] = KING;
+                pieces[a8] = ROOK;
+                pieces[d8] = EMPTY;
+                pieces[c8] = EMPTY;
+                return;
+            }
+            assert(false);
+        }
+    }
+
+    void makePromotionMove(Square from, Square to, Piece promoted, Piece captured) {
+        hashSquare(hash, from);
+        hashSquare(hash, to);
+
+        colors[currentPlayer].removeBit(from);
+        boards[PAWN].removeBit(from);
+        pieces[from] = EMPTY;
+
+        if (captured != EMPTY) {
+            boards[captured].removeBit(to);
+            colors[!currentPlayer].removeBit(to);
+            materials[!currentPlayer] -= values[captured];
+        }
+
+        colors[currentPlayer].addBit(to);
+        boards[promoted].addBit(to);
+        pieces[to] = promoted;
+
+        materials[currentPlayer] += values[promoted] - 1;
+
+        hashSquare(hash, from);
+        hashSquare(hash, to);
+    }
+
+    void unmakePromotionMove(Square from, Square to, Piece promotion, Piece captured) {
+        colors[currentPlayer].removeBit(to);
+        boards[promotion].removeBit(to);
+        materials[currentPlayer] -= values[promotion] - 1;
+
+        colors[currentPlayer].addBit(from);
+        boards[PAWN].addBit(from);
+        pieces[from] = PAWN;
+
+        pieces[to] = captured;
+        if (captured != EMPTY) {
+            boards[captured].addBit(to);
+            colors[!currentPlayer].addBit(to);
+            materials[!currentPlayer] += values[captured];
+        }
+    }
+
+    void makeStandardMove(Square from, Square to, Piece piece, Piece captured) {
+        hashSquare(hash, from);
+        hashSquare(hash, to);
+
+        colors[currentPlayer].removeBit(from);
+        boards[piece].removeBit(from);
+        pieces[from] = EMPTY;
+
+        if (captured != EMPTY) {
+            boards[captured].removeBit(to);
+            colors[!currentPlayer].removeBit(to);
+            materials[!currentPlayer] -= values[captured];
+        }
+
+        colors[currentPlayer].addBit(to);
+        boards[piece].addBit(to);
+        pieces[to] = piece;
+
+        hashSquare(hash, from);
+        hashSquare(hash, to);
+    }
+
+    void unmakeStandardMove(Square from, Square to, Piece piece, Piece captured) {
+        colors[currentPlayer].removeBit(to);
+        boards[piece].removeBit(to);
+
+        colors[currentPlayer].addBit(from);
+        boards[piece].addBit(from);
+        pieces[from] = piece;
+
+        pieces[to] = captured;
+        if (captured != EMPTY) {
+            boards[captured].addBit(to);
+            colors[!currentPlayer].addBit(to);
+            materials[!currentPlayer] += values[captured];
+        }
+    }
+
+    void makeEnPassantMove(Square from, Square to) {
+        hashSquare(hash, from);
+        hashSquare(hash, to);
+        hashSquare(hash, getPassant());
+
+        colors[currentPlayer].removeBit(from);
+        boards[PAWN].removeBit(from);
+        pieces[from] = EMPTY;
+
+        boards[PAWN].removeBit(getPassant());
+        colors[!currentPlayer].removeBit(getPassant());
+        pieces[getPassant()] = EMPTY;
+
+        colors[currentPlayer].addBit(to);
+        boards[PAWN].addBit(to);
+        pieces[to] = PAWN;
+
+        materials[!currentPlayer] -= 1;
+
+        hashSquare(hash, from);
+        hashSquare(hash, to);
+    }
+
+    void unmakeEnPassantMove(Square from, Square to) {
+        colors[currentPlayer].removeBit(to);
+        boards[PAWN].removeBit(to);
+        pieces[to] = EMPTY;
+
+        colors[currentPlayer].addBit(from);
+        boards[PAWN].addBit(from);
+        pieces[from] = PAWN;
+
+        boards[PAWN].addBit(getPassant());
+        colors[!currentPlayer].addBit(getPassant());
+        pieces[getPassant()] = PAWN;
+
+        materials[!currentPlayer] += 1;
+    }
+
     void makeMove(const Move& move) {
         fullMove = (currentPlayer == WHITE ) ? fullMove : fullMove + 1;
-        auto halfMove = getHalfMove();
-        auto origin = move.getOrigin();
-        auto destination = move.getDestination();
-        auto movingPiece = pieces[origin];
-        auto oldPassant = getPassant();
-        auto capturedPiece = pieces[destination];
-        auto castlingRights = getCastlingRights();
-        if (oldPassant != a1) hash^=passantHash[oldPassant % 8];
-        auto passant = a1;
-        if (move.getType() == CASTLE) {
-            if (destination == origin + 2) {
-                hashSquare(hash, origin);
-                hashSquare(hash, Square(origin + 3));
-                colors[currentPlayer].removeBit(origin);
-                boards[KING].removeBit(origin);
-                pieces[origin] = EMPTY;
-                colors[currentPlayer].addBit(origin + 1);
-                boards[ROOK].addBit(origin + 1);
-                pieces[origin + 1] = ROOK;
-                colors[currentPlayer].addBit(origin + 2);
-                boards[KING].addBit(origin + 2);
-                pieces[origin + 2] = KING;
-                colors[currentPlayer].removeBit(origin + 3);
-                boards[ROOK].removeBit(origin + 3);
-                pieces[origin + 3] = EMPTY;
-                hashSquare(hash, Square(origin + 1));
-                hashSquare(hash, Square(origin + 2));
-            }
-            else {
-                hashSquare(hash, origin);
-                hashSquare(hash, Square(origin - 4));
-                colors[currentPlayer].removeBit(origin);
-                boards[KING].removeBit(origin);
-                pieces[origin] = EMPTY;
-                colors[currentPlayer].addBit(origin - 1);
-                boards[ROOK].addBit(origin - 1);
-                pieces[origin - 1] = ROOK;
-                colors[currentPlayer].addBit(origin - 2);
-                boards[KING].addBit(origin - 2);
-                pieces[origin - 2] = KING;
-                colors[currentPlayer].removeBit(origin - 4);
-                boards[ROOK].removeBit(origin - 4);
-                pieces[origin - 4] = EMPTY;
-                hashSquare(hash, Square(origin - 1));
-                hashSquare(hash, Square(origin - 2));
-            }
-            capturedPiece = EMPTY;
-            halfMove++;
-        }
-        else if (move.getType() == EN_PASSANT) {
-            materials[currentPlayer ^ 1] -= 1;
-            hashSquare(hash, origin);
-            hashSquare(hash, oldPassant);
-            capturedPiece = PAWN;
-            colors[currentPlayer].removeBit(origin);
-            boards[PAWN].removeBit(origin);
-            pieces[origin] = EMPTY;
-            colors[currentPlayer].addBit(destination);
-            boards[PAWN].addBit(destination);
-            pieces[destination] = PAWN;
-            colors[currentPlayer ^ 1].removeBit(oldPassant);
-            boards[PAWN].removeBit(oldPassant);
-            pieces[oldPassant] = EMPTY;
-            halfMove = 0;
-            hashSquare(hash, destination);
-        }
-        else if (move.getType() == PROMOTION) {
-            materials[currentPlayer ^ 1] -= values[capturedPiece];
-            hashSquare(hash, origin);
-            hashSquare(hash, destination);
-            if (capturedPiece != EMPTY) {
-                colors[currentPlayer ^ 1].removeBit(destination);
-                boards[capturedPiece].removeBit(destination);
-                halfMove = 0;
-            }
-            else {
-                halfMove++;
-            }
-            auto promot = move.getPromotion();
-            materials[currentPlayer] += values[promot]-1;
-            colors[currentPlayer].removeBit(origin);
-            boards[PAWN].removeBit(origin);
-            pieces[origin] = EMPTY;
-            colors[currentPlayer].addBit(destination);
-            pieces[destination] = promot;
-            boards[promot].addBit(destination);
-            hashSquare(hash, destination);
-        }
-        else {
-            materials[currentPlayer ^ 1] -= values[capturedPiece];
-            hashSquare(hash, origin);
-            hashSquare(hash, destination);
-            if (capturedPiece != EMPTY) {
-                boards[capturedPiece].removeBit(destination);
-                halfMove = 0;
-            }
-            else {
-                halfMove++;
-            }
-            colors[currentPlayer ^ 1].removeBit(destination);
-            colors[currentPlayer].removeBit(origin);
-            boards[movingPiece].removeBit(origin);
-            pieces[origin] = EMPTY;
-            colors[currentPlayer].addBit(destination);
-            pieces[destination] = movingPiece;
-            boards[movingPiece].addBit(destination);
-            if (movingPiece == PAWN and (origin == destination + 16 or origin == destination - 16)) {
-                passant = destination;
-                hash^=passantHash[destination % 8];
-            }
-            hashSquare(hash, destination);
-        }
-        if (currentPlayer == WHITE) {
-            if (castlingRights & 0b1) {
-                if (pieces[e1] != KING or pieces[h1] != ROOK or !colors[WHITE].hasBit(h1)) {
-                    castlingRights &= ~0b1;
-                    hash ^= castleHash[0];
-                }
-            }
-            if (castlingRights & 0b10) {
-                if (pieces[e1] != KING or pieces[a1] != ROOK or !colors[WHITE].hasBit(a1)) {
-                    castlingRights &= ~0b10;
-                    hash ^= castleHash[1];
-                }
-            }
-        }
-        else {
-            if (castlingRights & 0b100) {
-                if (pieces[e8] != KING or pieces[h8] != ROOK or !colors[BLACK].hasBit(h8)) {
-                    castlingRights &= ~0b100;
-                    hash ^= castleHash[2];
-                }
-            }
-            if (castlingRights & 0b01000) {
-                if (pieces[e8] != KING or pieces[a8] != ROOK or !colors[BLACK].hasBit(a8)) {
-                    castlingRights &= ~0b1000;
-                    hash ^= castleHash[3];
-                }
-            }
-        }
+        Square from = move.getOrigin();
+        Square to = move.getDestination();
+        Piece piece = pieces[from];
+        assert (piece != EMPTY);
+        Piece captured = move.getType() == EN_PASSANT ? PAWN : pieces[to];
+        if (move.getType() == CASTLE) makeCastleMove(from,to);
+        else if (move.getType() == PROMOTION) makePromotionMove(from,to,move.getPromotion(),captured);
+        else if (move.getType() == EN_PASSANT) makeEnPassantMove(from,to);
+        else makeStandardMove(from,to,piece,captured);
+
+        updateStackHash(from,to,piece,captured);
         currentPlayer ^= 1;
+    }
+
+    [[nodiscard]] int updateCastlingRights(Square from, Square to) const {
+        int newRights = getCastlingRights();
+
+        if (from == e1) newRights &= ~0b11;
+        if (from == e8) newRights &= ~0b1100;
+
+        if (from == a1 | to == a1) newRights &= ~0b10;
+        if (from == h1 | to == h1) newRights &= ~0b1;
+        if (from == a8 | to == a8) newRights &= ~0b1000;
+        if (from == h8 | to == h8) newRights &= ~0b100;
+
+        return newRights;
+    }
+
+    void updateStackHash(Square from, Square to, Piece piece, Piece captured) {
+        int halfMove = (captured != EMPTY || piece == PAWN) ? 0 : getHalfMove() + 1;
+
+        Square newPassant = a1;
+        if (piece == PAWN and abs(to - from) == 16) {
+            newPassant = to;
+        }
+        if (getPassant() != a1) hash ^= passantHash[getPassant() % 8];
+        if (newPassant != a1) hash ^= passantHash[newPassant % 8];
+
+        hash ^= castleHash[getCastlingRights()];
+        int newCastlingRights = updateCastlingRights(from,to);
+        hash ^= castleHash[newCastlingRights];
+
         hash ^= blackHash;
         hashHistory[hashIndex++] = hash;
-        stack.emplace_back(passant, castlingRights, capturedPiece, halfMove);
-        if (halfMove >= 50 or insufficientMaterial()) {
-            result = 0;
-        }
-        int count = 1;
-        for (int i = hashIndex - 2; i >= hashIndex - 1 - halfMove; i--) {
-            if (hashHistory[i] == hash) {count++;}
-            if (count >= 3) result = 0;
-        }
+        stack.emplace_back(newPassant,newCastlingRights,captured,halfMove);
     }
 
     void unmakeMove(const Move& move) {
         fullMove = (currentPlayer == WHITE ) ? fullMove - 1 : fullMove;
-        auto capturedPiece = stack.back().getCaptured();
+        Square from = move.getOrigin();
+        Square to = move.getDestination();
+        Piece piece = pieces[to];
+        assert (pieces[to] != EMPTY);
+        Piece captured = stack.back().getCaptured();
         currentPlayer ^= 1;
         stack.pop_back();
-        auto origin = move.getOrigin();
-        auto destination = move.getDestination();
-        auto movingPiece = pieces[destination];
-        if (move.getType() == CASTLE) {
-            if (destination == origin + 2) {
-                colors[currentPlayer].addBit(origin);
-                boards[KING].addBit(origin);
-                pieces[origin] = KING;
-                colors[currentPlayer].removeBit(origin + 1);
-                boards[ROOK].removeBit(origin + 1);
-                pieces[origin + 1] = EMPTY;
-                colors[currentPlayer].removeBit(origin + 2);
-                boards[KING].removeBit(origin + 2);
-                pieces[origin + 2] = EMPTY;
-                colors[currentPlayer].addBit(origin + 3);
-                boards[ROOK].addBit(origin + 3);
-                pieces[origin + 3] = ROOK;
-            }
-            else {
-                colors[currentPlayer].addBit(origin);
-                boards[KING].addBit(origin);
-                pieces[origin] = KING;
-                colors[currentPlayer].removeBit(origin - 1);
-                boards[ROOK].removeBit(origin - 1);
-                pieces[origin - 1] = EMPTY;
-                colors[currentPlayer].removeBit(origin - 2);
-                boards[KING].removeBit(origin - 2);
-                pieces[origin - 2] = EMPTY;
-                colors[currentPlayer].addBit(origin - 4);
-                boards[ROOK].addBit(origin - 4);
-                pieces[origin - 4] = ROOK;
-            }
-        }
-        else if (move.getType() == EN_PASSANT) {
-            auto passant = getPassant();
-            materials[currentPlayer ^ 1] += 1;
-            colors[currentPlayer].addBit(origin);
-            boards[PAWN].addBit(origin);
-            pieces[origin] = PAWN;
-            colors[currentPlayer].removeBit(destination);
-            boards[PAWN].removeBit(destination);
-            pieces[destination] = EMPTY;
-            colors[currentPlayer ^ 1].addBit(passant);
-            boards[PAWN].addBit(passant);
-            pieces[passant] = PAWN;
-        }
-        else if (move.getType() == PROMOTION) {
-            materials[currentPlayer ^ 1] += values[capturedPiece];
-            auto promot = move.getPromotion();
-            materials[currentPlayer] -= values[promot]-1;
-            colors[currentPlayer].addBit(origin);
-            boards[PAWN].addBit(origin);
-            pieces[origin] = PAWN;
-            colors[currentPlayer].removeBit(destination);
-            pieces[destination] = capturedPiece;
-            boards[promot].removeBit(destination);
-            if (capturedPiece != EMPTY) {
-                colors[currentPlayer ^ 1].addBit(destination);
-                boards[capturedPiece].addBit(destination);
-            }
-        }
-        else {
-            materials[currentPlayer ^ 1] += values[capturedPiece];
-            colors[currentPlayer].addBit(origin);
-            boards[movingPiece].addBit(origin);
-            pieces[origin] = movingPiece;
-            colors[currentPlayer].removeBit(destination);
-            boards[movingPiece].removeBit(destination);
-            pieces[destination] = capturedPiece;
-            if (capturedPiece != EMPTY) {
-                colors[currentPlayer ^ 1].addBit(destination);
-                boards[capturedPiece].addBit(destination);
-            }
-        }
+
+        if (move.getType() == CASTLE) unmakeCastleMove(from,to);
+        else if (move.getType() == PROMOTION) unmakePromotionMove(from,to,move.getPromotion(),captured);
+        else if (move.getType() == EN_PASSANT) unmakeEnPassantMove(from,to);
+        else unmakeStandardMove(from,to,piece,captured);
+
         hashIndex--;
         hash = hashHistory[hashIndex-1];
         hashHistory[hashIndex] = 0;
         result = 2;
+
     }
+    [[nodiscard]] std::array<Piece, 64> getPieces() const {
+        return this->pieces;
+    }
+
     bool isLegal(const Move& move) {
+        // TODO
         if (move.getType() == CASTLE) {
             auto origin = move.getOrigin();
             auto destination = move.getDestination();
             if (origin < destination) {
                 if (isSquareAttacked(origin,currentPlayer) or isSquareAttacked(Square(origin + 1),currentPlayer)
-                    or isSquareAttacked(destination,currentPlayer)) {
+                    or isSquareAttacked(destination,currentPlayer) or pieces[origin+1] != EMPTY
+                    or pieces[origin+2] != EMPTY) {
                     return false;
                 }
                 return true;
             }
             if (isSquareAttacked(origin,currentPlayer) or isSquareAttacked(Square(origin - 1),currentPlayer)
-                or isSquareAttacked(destination,currentPlayer)) {
+                or isSquareAttacked(destination,currentPlayer) or pieces[origin-1] != EMPTY
+                or pieces[origin-2] != EMPTY or pieces[origin-3] != EMPTY) {
                 return false;
                 }
             return true;
         }
         makeMove(move);
-        if (kingCheck(currentPlayer^1)) {
+        if (kingCheck(currentPlayer ^ 1)) {
             unmakeMove(move);
             return false;
         }

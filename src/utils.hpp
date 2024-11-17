@@ -108,10 +108,8 @@ public:
         return MoveType((actualMove >> 12) & 0b11);
     }
 
-   [[nodiscard]] Piece getPromotion() const {
-        return Piece((actualMove >> 14) & 0b11);
-    }
-
+    [[nodiscard]] Piece getPromotion() const {
+        return Piece((actualMove >> 14) & 0b11);}
     bool operator==(const Move& other) const {
         return (this->actualMove == other.actualMove);
     }
@@ -146,7 +144,7 @@ inline std::string pieceToString(Piece piece) {
         case KING:
             return "k";
         default:
-            return "U";
+            return " ";
     }
 }
 
@@ -161,6 +159,16 @@ inline std::ostream& operator<<(std::ostream& os, const Move& move) {
     }
     else {
         os << move.getOrigin() << move.getDestination() << move.getPromotion();
+    }
+    return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const std::array<Piece, 64> & mailbox) {
+    for (int row = 7; row >= 0; --row) {
+        for (int col = 0; col < 8; col++) {
+            os << pieceToString(mailbox[col + row * 8]) << " ";
+        }
+        os << std::endl;
     }
     return os;
 }
