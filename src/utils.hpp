@@ -96,6 +96,10 @@ public:
         actualMove = origin + (destination << 6) + (type << 12) + (promotion << 14);
     }
 
+    explicit Move(uint16 actualMove) {
+        this->actualMove = actualMove;
+    }
+
     [[nodiscard]] Square getOrigin() const {
         return Square((actualMove >> 0) & 0b111111);
     }

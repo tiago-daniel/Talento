@@ -130,6 +130,27 @@ public:
         return this->currentPlayer;
     }
 
+    [[nodiscard]] int doubledPawns(bool player) const {
+        uint64 board = colors[player].getBoard() & boards[PAWN].getBoard();
+        int res = 0;
+        for (int file = 0; file < 8; file++) {
+            int count = 0;
+            for (int rank = 0; rank < 8; rank++) {
+                if (board & Bit(rank * 8 + file)) count++;
+            }
+            if (count > 1) res += count;
+        }
+        return res;
+    }
+
+    void endGame(const int result) {
+        this->result = result;
+    }
+
+    [[nodiscard]] int getMaterial(bool player) const {
+        return materials[player];
+    }
+
     bool checkIntegrity() {
         for (int i = 0; i < 64; i++) {
             if (pieces[i] != EMPTY) {
@@ -211,7 +232,19 @@ public:
         auto moves = MoveList();
         auto oldMoves = pseudoLegalMoves();
         for (int i = 0; i < oldMoves.getSize();i++) {
-            if (isLegal(moves.getMoves()[i])) moves.push(moves.getMoves()[i]);
+            auto move = oldMoves.getMoves()[i];
+            if (move.getType() == CASTLE) {
+                if (isLegalCastle(move)) moves.push(move);
+            }
+            else {
+                if (isLegal(move)) moves.push(move);
+            }
+        }
+        if (moves.getSize() == 0) {
+            if (kingCheck(currentPlayer)) {
+                endGame(currentPlayer * 2 - 1);
+            }
+            else endGame(0);
         }
         return moves;
     }
@@ -556,6 +589,15 @@ public:
 
         updateStackHash(from,to,piece,captured);
         currentPlayer ^= 1;
+
+        int count = 1;
+
+        if (getHalfMove() >= 50) endGame(0);
+        else if (insufficientMaterial()) endGame(0);
+        else for (int i = hashIndex - 2; i >= hashIndex - getHalfMove(); i--) {
+            if (hashHistory[i] == hash) count++;
+            if (count >= 3) endGame(0);
+        }
     }
 
     [[nodiscard]] int updateCastlingRights(Square from, Square to) const {
@@ -616,7 +658,7 @@ public:
         return this->pieces;
     }
 
-    bool isLegal(const Move& move) {
+    bool isLegalCastle(const Move& move) {
         // TODO
         if (move.getType() == CASTLE) {
             auto origin = move.getOrigin();
@@ -626,7 +668,7 @@ public:
                     or isSquareAttacked(destination,currentPlayer) or pieces[origin+1] != EMPTY
                     or pieces[origin+2] != EMPTY) {
                     return false;
-                }
+                    }
                 return true;
             }
             if (isSquareAttacked(origin,currentPlayer) or isSquareAttacked(Square(origin - 1),currentPlayer)
@@ -634,14 +676,15 @@ public:
                 or pieces[origin-2] != EMPTY or pieces[origin-3] != EMPTY) {
                 return false;
                 }
-            return true;
         }
-        makeMove(move);
+        return true;
+    }
+
+    bool isLegal(const Move& move) {
+        // TODO
         if (kingCheck(currentPlayer ^ 1)) {
-            unmakeMove(move);
             return false;
         }
-        unmakeMove(move);
         return true;
     }
 
