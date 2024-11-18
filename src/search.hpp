@@ -15,17 +15,10 @@ namespace Search {
         uint64 nodes = 0;
         uint64 curr;
 
-        auto moves = pos.pseudoLegalMoves();
+        auto moves = pos.allMoves();
         for (int i = 0 ;i <  moves.getSize(); i++) {
             auto move = moves.getMoves()[i];
-            if (move.getType() == CASTLE) {
-                if (!pos.isLegalCastle(move)) continue;
-            }
             pos.makeMove(move);
-            if (!pos.isLegal(move)) {
-                pos.unmakeMove(move);
-                continue;
-            }
             curr = perftAux(pos, depth - 1, initial);
             pos.unmakeMove(move);
             nodes += curr;
@@ -37,6 +30,7 @@ namespace Search {
         return perftAux(pos, depth, depth);
     }
     double negaMax(Board& board, int depth) {
+        board.checkForGameOver();
         if (board.getResult() != 2) {
             if (board.getCurrentPlayer() == WHITE) {
                 return board.getResult() * 1000.0;
@@ -46,17 +40,10 @@ namespace Search {
         if (depth == 0) return Evaluation::eval(board);
         double max = - 10000;
 
-        auto moves = board.pseudoLegalMoves();
+        auto moves = board.allMoves();
         for (int i = 0 ;i <  moves.getSize(); i++) {
             auto move = moves.getMoves()[i];
-            if (move.getType() == CASTLE) {
-                if (!board.isLegalCastle(move)) continue;
-            }
             board.makeMove(move);
-            if (!board.isLegal(move)) {
-                board.unmakeMove(move);
-                continue;
-            }
             double score = -negaMax(board, depth - 1);
             board.unmakeMove(move);
             if (score > max) max = score;
@@ -65,21 +52,13 @@ namespace Search {
     }
     Move rootNegaMax(Board& pos, int depth) {
         Move bestMove;
-        int count = 0;
-
+        pos.checkForGameOver();
+        if (pos.getResult() != 2) return {a1,a1,NORMAL};
         double max = - 10000;
-
-        for (int i = 0 ;i <  pos.pseudoLegalMoves().getSize(); i++) {
-            count++;
-            auto move = pos.pseudoLegalMoves().getMoves()[i];
-            if (move.getType() == CASTLE) {
-                if (!pos.isLegalCastle(move)) continue;
-            }
+        auto moves = pos.allMoves();
+        for (int i = 0 ;i <  moves.getSize(); i++) {
+            auto move = moves.getMoves()[i];
             pos.makeMove(move);
-            if (!pos.isLegal(move)) {
-                pos.unmakeMove(move);
-                continue;
-            }
             double score = -negaMax(pos, depth - 1);
             pos.unmakeMove(move);
             if (score > max) {

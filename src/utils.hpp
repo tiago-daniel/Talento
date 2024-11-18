@@ -41,11 +41,11 @@ enum Square {
 };
 
 enum Piece{
+    PAWN,
     KNIGHT,
     BISHOP,
     ROOK,
     QUEEN,
-    PAWN,
     KING,
     EMPTY
 };
@@ -92,7 +92,7 @@ private:
 public:
     Move() = default;
 
-    Move(Square origin, Square destination, MoveType type, Piece promotion = KNIGHT) {
+    Move(Square origin, Square destination, MoveType type, Piece promotion = PAWN) {
         actualMove = origin + (destination << 6) + (type << 12) + (promotion << 14);
     }
 
@@ -154,8 +154,8 @@ inline std::string pieceToString(Piece piece) {
 
 inline Piece stringToPiece(const char& pieceStr) {
     switch (pieceStr) {
-        case 'p':
-            return PAWN;
+        case 'n':
+            return KNIGHT;
         case 'b':
             return BISHOP;
         case 'r':
@@ -163,7 +163,7 @@ inline Piece stringToPiece(const char& pieceStr) {
         case 'q':
             return QUEEN;
         default:
-            return KNIGHT;
+            return PAWN;
     }
 }
 

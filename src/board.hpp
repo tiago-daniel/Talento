@@ -13,7 +13,7 @@
 #endif //BOARD_HPP
 
 enum Result { WIN = 1, DRAW = 0, LOSS = -1 };
-inline std::array values{3.0, 3.25, 5.0, 9.0, 1.0, 200.0, 0.0};
+inline std::array values{3, 3, 5, 9, 1 ,200 ,0 };
 
 class Board {
 private:
@@ -334,14 +334,33 @@ public:
         return isSquareAttacked(kingSquare(player), player);
     }
 
+    /**
+     * @brief Returns true if there is a draw by insufficient material.
+     *
+     *  Thanks to Matt (nocturn9x) for providing the pseudo code for this function.
+     *
+     * @return  true if there's a draw by insufficient material, false otherwise
+     */
+
     [[nodiscard]] bool insufficientMaterial() const {
-        if (this->boards[PAWN].getBoard() != 0) {
-            return false;
-        }
-        if (materials[WHITE] < 4 and materials[BLACK] < 4) {
-            return true;
-        }
-        return false;
+        int occupancy = colors[WHITE].countBits() + colors[BLACK].countBits() > 4;
+        if (occupancy > 4) return false;
+
+        if (occupancy == 2) return true;
+
+        if (boards[PAWN].countBits() != 0) return false;
+        if (boards[ROOK].countBits() != 0) return false;
+        if (boards[QUEEN].countBits() != 0) return false;
+
+        int knightCount = boards[KNIGHT].countBits();
+
+        if (knightCount > 1) return false;
+
+        int bishopCount = boards[BISHOP].countBits();
+
+        if  (bishopCount + knightCount > 1) return false;
+
+        return true;
     }
 
     void updateBitboard(Square sq, Piece piece, bool color) {
@@ -625,15 +644,6 @@ public:
 
         updateStackHash(from,to,piece,captured);
         currentPlayer ^= 1;
-
-        int count = 1;
-
-        if (getHalfMove() >= 50) endGame(0);
-        else if (insufficientMaterial()) endGame(0);
-        else for (int i = hashIndex - 2; i >= hashIndex - getHalfMove(); i--) {
-            if (hashHistory[i] == hash) count++;
-            if (count >= 3) endGame(0);
-        }
     }
 
     [[nodiscard]] int updateCastlingRights(Square from, Square to) const {
@@ -667,6 +677,35 @@ public:
         hash ^= blackHash;
         hashHistory[hashIndex++] = hash;
         stack.emplace_back(newPassant,newCastlingRights,captured,halfMove);
+    }
+
+    [[nodiscard]] bool gameIsDrawn() const {
+        return this->result == 0;
+    }
+
+    void checkForGameOver() {
+        int count = 0;
+        if (numberLegal() == 0) {
+            if (kingCheck(currentPlayer)) endGame(currentPlayer * 2 - 1);
+            else endGame(0);
+            return;
+        }
+        for (int i = 0; i < hashIndex; i++) {
+            if (hashHistory[i] == hash) {
+                count+=1;
+            }
+            if (count >= 3) {
+                endGame(0);
+                return;
+            }
+        }
+        if (getHalfMove() >= 50) {
+            endGame(0);
+            return;
+        }
+        if (insufficientMaterial()) {
+            endGame(0);
+        }
     }
 
     void unmakeMove(const Move& move) {

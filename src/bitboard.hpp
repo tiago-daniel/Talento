@@ -30,6 +30,10 @@ public:
         board &= ~Bit(square);
     }
 
+    [[nodiscard]] int countBits() const {
+        return __builtin_popcountll(board);
+    }
+
     friend std::ostream& operator<<(std::ostream& os, const Bitboard& board) {
         for (int row = 7; row >= 0; --row) {
             for (int col = 0; col < 8; col++) {
