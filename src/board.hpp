@@ -13,7 +13,7 @@
 #endif //BOARD_HPP
 
 enum Result { WIN = 1, DRAW = 0, LOSS = -1 };
-inline std::array values{3, 3, 5, 9, 1, 200, 0};
+inline std::array values{3.0, 3.25, 5.0, 9.0, 1.0, 200.0, 0.0};
 
 class Board {
 private:
@@ -130,6 +130,11 @@ public:
         return this->currentPlayer;
     }
 
+    [[nodiscard]] uint64 getHash() const {
+        return this->hash;
+    }
+
+
     [[nodiscard]] int doubledPawns(bool player) const {
         uint64 board = colors[player].getBoard() & boards[PAWN].getBoard();
         int res = 0;
@@ -228,6 +233,27 @@ public:
         return moves;
     }
 
+    [[nodiscard]] int numberLegal() {
+        int moves = 0;
+        auto oldMoves = pseudoLegalMoves();
+        for (int i = 0; i < oldMoves.getSize();i++) {
+            auto move = oldMoves.getMoves()[i];
+            if (move.getType() == CASTLE) {
+                if (isLegalCastle(move)) moves++;
+            }
+            else {
+                makeMove(move);
+                if (!isLegal(move)) {
+                    unmakeMove(move);
+                    continue;
+                }
+                unmakeMove(move);
+                moves++;
+            }
+        }
+        return moves;
+    }
+
     [[nodiscard]] MoveList allMoves() {
         auto moves = MoveList();
         auto oldMoves = pseudoLegalMoves();
@@ -237,12 +263,18 @@ public:
                 if (isLegalCastle(move)) moves.push(move);
             }
             else {
-                if (isLegal(move)) moves.push(move);
+                makeMove(move);
+                if (!isLegal(move)) {
+                    unmakeMove(move);
+                    continue;
+                }
+                unmakeMove(move);
+                moves.push(move);
             }
         }
         if (moves.getSize() == 0) {
             if (kingCheck(currentPlayer)) {
-                endGame(currentPlayer * 2 - 1);
+                endGame(currentPlayer * 2 - 1 );
             }
             else endGame(0);
         }
@@ -251,6 +283,10 @@ public:
 
     [[nodiscard]] Square getPassant() const {
         return stack.back().getPassant();
+    }
+
+    [[nodiscard]] int getResult() const {
+        return this->result;
     }
 
     [[nodiscard]] int getCastlingRights() const {

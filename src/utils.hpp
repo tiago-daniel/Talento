@@ -152,6 +152,52 @@ inline std::string pieceToString(Piece piece) {
     }
 }
 
+inline Piece stringToPiece(const char& pieceStr) {
+    switch (pieceStr) {
+        case 'p':
+            return PAWN;
+        case 'b':
+            return BISHOP;
+        case 'r':
+            return ROOK;
+        case 'q':
+            return QUEEN;
+        default:
+            return KNIGHT;
+    }
+}
+
+inline Square stringToSquare(const std::string &square_str) {
+    if (square_str.length() != 2) {
+        assert(false);
+        return noSquare;
+    }
+
+    // Convert file character to lowercase to handle uppercase inputs
+    char file_char = std::tolower(square_str[0]);
+    char rank_char = square_str[1];
+
+    // Validate file character ('a' to 'h')
+    if (file_char < 'a' || file_char > 'h') {
+        assert(false);
+        return noSquare;
+    }
+    int file = file_char - 'a';
+
+
+    // Validate rank character ('1' to '8')
+    if (rank_char < '1' || rank_char > '8') {
+        assert(false);
+        return noSquare;
+    }
+    int rank = rank_char - '1';
+
+    // Calculate square index (0 to 63)
+    int square = rank * 8 + file;
+
+    return static_cast<Square>(square);
+}
+
 inline std::ostream& operator<<(std::ostream& os, const Piece& piece) {
     os << pieceToString(piece);
     return os;
@@ -175,34 +221,6 @@ inline std::ostream& operator<<(std::ostream& os, const std::array<Piece, 64> & 
         os << std::endl;
     }
     return os;
-}
-
-inline Square stringToSquare(const std::string& square_str) {
-    if (square_str.length() != 2) {
-        throw std::invalid_argument("Invalid square string: must be two characters long.");
-    }
-
-    // Convert file character to lowercase to handle uppercase inputs
-    char file_char = std::tolower(square_str[0]);
-    char rank_char = square_str[1];
-
-    // Validate file character ('a' to 'h')
-    if (file_char < 'a' || file_char > 'h') {
-        throw std::invalid_argument("Invalid file character in square string.");
-    }
-    int file = file_char - 'a';
-
-
-    // Validate rank character ('1' to '8')
-    if (rank_char < '1' || rank_char > '8') {
-        throw std::invalid_argument("Invalid rank character in square string.");
-    }
-    int rank = rank_char - '1';
-
-    // Calculate square index (0 to 63)
-    int square = rank * 8 + file;
-
-    return static_cast<Square>(square);
 }
 
 //HASHING

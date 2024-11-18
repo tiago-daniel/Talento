@@ -9,8 +9,8 @@
 
 namespace Search {
     uint64 perftAux(Board& pos, int depth, int initial) {
-        if (depth == 0) {
-            return 1ULL;
+        if (depth == 1) {
+            return pos.numberLegal();
         }
         uint64 nodes = 0;
         uint64 curr;
@@ -36,16 +36,42 @@ namespace Search {
     uint64 perft(Board& pos, int depth) {
         return perftAux(pos, depth, depth);
     }
-    uint64 bulkPerft(Board& pos, int depth) {
-        if (depth == 1) {
-            return pos.allMoves().getSize();
+    double negaMax(Board& board, int depth) {
+        if (board.getResult() != 2) {
+            if (board.getCurrentPlayer() == WHITE) {
+                return board.getResult() * 1000.0;
+            }
+            return  - board.getResult() * 1000.0;
         }
-        uint64 nodes = 0;
-        uint64 curr;
+        if (depth == 0) return Evaluation::eval(board);
+        double max = - 10000;
 
-        auto moves = pos.pseudoLegalMoves();
+        auto moves = board.pseudoLegalMoves();
         for (int i = 0 ;i <  moves.getSize(); i++) {
             auto move = moves.getMoves()[i];
+            if (move.getType() == CASTLE) {
+                if (!board.isLegalCastle(move)) continue;
+            }
+            board.makeMove(move);
+            if (!board.isLegal(move)) {
+                board.unmakeMove(move);
+                continue;
+            }
+            double score = -negaMax(board, depth - 1);
+            board.unmakeMove(move);
+            if (score > max) max = score;
+        }
+        return max;
+    }
+    Move rootNegaMax(Board& pos, int depth) {
+        Move bestMove;
+        int count = 0;
+
+        double max = - 10000;
+
+        for (int i = 0 ;i <  pos.pseudoLegalMoves().getSize(); i++) {
+            count++;
+            auto move = pos.pseudoLegalMoves().getMoves()[i];
             if (move.getType() == CASTLE) {
                 if (!pos.isLegalCastle(move)) continue;
             }
@@ -54,13 +80,16 @@ namespace Search {
                 pos.unmakeMove(move);
                 continue;
             }
-            curr = bulkPerft(pos, depth - 1);
+            double score = -negaMax(pos, depth - 1);
             pos.unmakeMove(move);
-            nodes += curr;
+            if (score > max) {
+                max = score;
+                bestMove = pos.allMoves().getMoves()[i];
+            }
         }
-        return nodes;
+        assert(bestMove != Move());
+        return bestMove;
     }
-
 };
 
 

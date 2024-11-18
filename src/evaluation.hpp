@@ -7,7 +7,7 @@
 
 #include "board.hpp"
 
-class Evaluation {
+namespace Evaluation {
     double eval(const Board& board) {
         bool color = board.getCurrentPlayer();
         double myMaterial = board.getMaterial(color);
