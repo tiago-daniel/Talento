@@ -7,8 +7,9 @@
 
 #include "evaluation.hpp"
 
-namespace Search {
-    uint64 perftAux(Board& pos, int depth, int initial) {
+class Search {
+public:
+    static uint64 perftAux(Board& pos, int depth, int initial) {
         if (depth == 1) {
             return pos.numberLegal();
         }
@@ -26,10 +27,10 @@ namespace Search {
         }
         return nodes;
     }
-    uint64 perft(Board& pos, int depth) {
+    static uint64 perft(Board& pos, int depth) {
         return perftAux(pos, depth, depth);
     }
-    int negaMax(Board& board, int depth) {
+    static int negaMax(Board& board, int depth) {
         board.checkForGameOver();
         if (board.getResult() != 2) {
             if (board.getResult() == 0) {
@@ -59,7 +60,7 @@ namespace Search {
         }
         return max;
     }
-    Move rootNegaMax(Board& pos, int depth) {
+    static Move rootNegaMax(Board& pos, int depth) {
         Move bestMove;
         pos.checkForGameOver();
         if (pos.getResult() != 2) return Move();
@@ -69,7 +70,6 @@ namespace Search {
             auto move = moves.getMoves()[i];
             pos.makeMove(move);
             int score = -negaMax(pos, depth - 1);
-            std::cout << move << " - " << score << std::endl;
             pos.unmakeMove(move);
             if (score > max) {
                 max = score;

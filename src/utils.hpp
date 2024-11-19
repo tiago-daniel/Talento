@@ -9,11 +9,14 @@
 #include <cstdint>
 #include <random>
 #include <iostream>
+#include <sstream>
 
 typedef uint_fast64_t uint64;
 typedef uint_fast32_t uint32;
 typedef uint_fast16_t uint16;
 typedef uint_fast8_t uint8;
+typedef int64_t int64;
+typedef int32_t int32;
 
 
 inline uint64 Bit(int n) {
@@ -168,15 +171,15 @@ inline Piece stringToPiece(const char& pieceStr) {
     }
 }
 
-inline Square stringToSquare(const std::string &square_str) {
-    if (square_str.length() != 2) {
+inline Square stringToSquare(const std::string &square) {
+    if (square.length() != 2) {
         assert(false);
         return noSquare;
     }
 
     // Convert file character to lowercase to handle uppercase inputs
-    char file_char = std::tolower(square_str[0]);
-    char rank_char = square_str[1];
+    char file_char = std::tolower(square[0]);
+    char rank_char = square[1];
 
     // Validate file character ('a' to 'h')
     if (file_char < 'a' || file_char > 'h') {
@@ -194,9 +197,9 @@ inline Square stringToSquare(const std::string &square_str) {
     int rank = rank_char - '1';
 
     // Calculate square index (0 to 63)
-    int square = rank * 8 + file;
+    int square2 = rank * 8 + file;
 
-    return static_cast<Square>(square);
+    return static_cast<Square>(square2);
 }
 
 inline std::ostream& operator<<(std::ostream& os, const Piece& piece) {
@@ -224,15 +227,27 @@ inline std::ostream& operator<<(std::ostream& os, const std::array<Piece, 64> & 
     return os;
 }
 
+inline std::vector<std::string> splitString(const std::string &str) {
+    std::vector<std::string> strings;
+    std::istringstream stream(str);
+    std::string word;
+
+    while (stream >> word) {
+        strings.push_back(word);
+    }
+
+    return strings;
+}
+
 //HASHING
 
-inline uint64 transpositionTable[64][12]{};
+inline uint64 zobristTable[64][12]{};
 inline uint64 blackHash = 0;
 inline uint64 castleHash[4]{};
 inline uint64 passantHash[8]{};
 
 inline void initZobrist() {
-    for (auto &i : transpositionTable) {
+    for (auto &i : zobristTable) {
         for (auto &j : i) {
             j = randomuint64();
         }

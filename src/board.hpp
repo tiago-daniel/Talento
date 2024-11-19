@@ -10,6 +10,8 @@
 #include "bitboard.hpp"
 #include <sstream>
 
+#include "evaluation.hpp"
+
 #endif //BOARD_HPP
 
 enum Result { WIN = 1, DRAW = 0, LOSS = -1 };
@@ -123,7 +125,7 @@ public:
 
     void hashSquare(uint64 &hash, const Square square) const {
         if (pieces[square] == EMPTY or square == noSquare) {return;}
-        hash^=transpositionTable[square][pieces[square] + 6 * colors[BLACK].hasBit(square)];
+        hash^=zobristTable[square][pieces[square] + 6 * colors[BLACK].hasBit(square)];
     }
 
     [[nodiscard]] bool getCurrentPlayer() const {
@@ -332,6 +334,24 @@ public:
 
     [[nodiscard]] bool kingCheck(bool player) {
         return isSquareAttacked(kingSquare(player), player);
+    }
+
+    Move stringToMove(const std::string &move) {
+        const Square from = stringToSquare(move.substr(0, 2));
+        const Square to = stringToSquare(move.substr(2, 4));
+        const Piece movingPiece = pieces[from];
+        const Piece capturedPiece = pieces[to];
+
+        if (move.size() == 5) {
+            return Move{from,to,PROMOTION,stringToPiece(move.back())};
+        }
+        if (capturedPiece == EMPTY and movingPiece == PAWN and to != from + 8) {
+            return Move{from,to,EN_PASSANT};
+        }
+        if (movingPiece == KING and abs(to-from) == 2) {
+            return Move{from,to,CASTLE};
+        }
+        return Move{from,to,NORMAL};
     }
 
     /**

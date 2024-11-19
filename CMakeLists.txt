@@ -17,4 +17,5 @@ add_executable(Talento main.cpp
         src/board.hpp
         src/search.hpp
         src/evaluation.hpp
+        src/uci.hpp
 )
