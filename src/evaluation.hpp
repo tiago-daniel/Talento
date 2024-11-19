@@ -7,6 +7,8 @@
 
 #include "board.hpp"
 
+#define WHITE_PAWN      (2*PAWN   + WHITE)
+#define BLACK_PAWN      (2*PAWN   + BLACK)
 #define WHITE_KNIGHT    (2*KNIGHT + WHITE)
 #define BLACK_KNIGHT    (2*KNIGHT + BLACK)
 #define WHITE_BISHOP    (2*BISHOP + WHITE)
@@ -15,13 +17,9 @@
 #define BLACK_ROOK      (2*ROOK   + BLACK)
 #define WHITE_QUEEN     (2*QUEEN  + WHITE)
 #define BLACK_QUEEN     (2*QUEEN  + BLACK)
-#define WHITE_PAWN      (2*PAWN   + WHITE)
-#define BLACK_PAWN      (2*PAWN   + BLACK)
 #define WHITE_KING      (2*KING   + WHITE)
 #define BLACK_KING      (2*KING   + BLACK)
-#define EMPTY_EVAL      (2*BLACK_KING)
 
-#define PCOLOR(p) ((p)&1)
 
 inline int side2move;
 inline int board[64];
@@ -32,6 +30,8 @@ inline int board[64];
 inline int mg_value[6] = { 82, 337, 365, 477, 1025,  0};
 inline int eg_value[6] = { 94, 281, 297, 512,  936,  0};
 
+/* piece/sq tables */
+/* values from Rofchade: http://www.talkchess.com/forum3/viewtopic.php?f=2&t=68311&start=19 */
 
 inline int mg_pawn_table[64] = {
       0,   0,   0,   0,   0,   0,  0,   0,
@@ -190,8 +190,7 @@ inline int mg_table[12][64];
 inline int eg_table[12][64];
 
 namespace Evaluation {
-
-    void init_tables() {
+    inline void init_tables() {
         int pc, p, sq;
         for (p = PAWN, pc = WHITE_PAWN; p <= KING; pc += 2, p++) {
             for (sq = 0; sq < 64; sq++) {
@@ -203,7 +202,9 @@ namespace Evaluation {
         }
     }
 
-    int eval(const Board& board) {
+    inline int eval(Board &board)
+    {
+        side2move = board.getCurrentPlayer();
         int mg[2];
         int eg[2];
         int gamePhase = 0;
@@ -215,24 +216,26 @@ namespace Evaluation {
 
         /* evaluate each piece */
         auto pieces = board.getPieces();
+        auto black = board.getColors()[BLACK];
         for (int sq = 0; sq < 64; ++sq) {
-            int pc = pieces[sq];
-            if (pc != EMPTY) {
-                mg[PCOLOR(pc)] += mg_table[pc][sq];
-                eg[PCOLOR(pc)] += eg_table[pc][sq];
+            int color = black.hasBit(sq);
+            int pc = pieces[sq] * 2 + color;
+            if (pieces[sq] != EMPTY) {
+                mg[color] += mg_table[pc][FLIP(sq)];
+                eg[color] += eg_table[pc][FLIP(sq)];
                 gamePhase += gamephaseInc[pc];
             }
         }
 
         /* tapered eval */
-        int mgScore = mg[side2move] - mg[OTHER(side2move)];
-        int egScore = eg[side2move] - eg[OTHER(side2move)];
+        int mgScore = mg[side2move] - mg[side2move^1];
+        int egScore = eg[side2move] - eg[side2move^1];
         int mgPhase = gamePhase;
         if (mgPhase > 24) mgPhase = 24; /* in case of early promotion */
         int egPhase = 24 - mgPhase;
         return (mgScore * mgPhase + egScore * egPhase) / 24;
     }
-};
+}
 
 
 

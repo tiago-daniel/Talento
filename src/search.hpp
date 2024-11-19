@@ -29,22 +29,31 @@ namespace Search {
     uint64 perft(Board& pos, int depth) {
         return perftAux(pos, depth, depth);
     }
-    double negaMax(Board& board, int depth) {
+    int negaMax(Board& board, int depth) {
         board.checkForGameOver();
         if (board.getResult() != 2) {
-            if (board.getCurrentPlayer() == WHITE) {
-                return board.getResult() * 1000.0;
+            if (board.getResult() == 0) {
+                return 1;
             }
-            return  - board.getResult() * 1000.0;
+            if (board.getCurrentPlayer() == WHITE) {
+                if (board.getResult() == 1) {
+                    return 2147483647;
+                }
+                return -2147483647;
+            }
+            if (board.getResult() == 1) {
+                return -2147483647;
+            }
+            return 2147483647;
         }
         if (depth == 0) return Evaluation::eval(board);
-        double max = - 10000;
+        int max = - 10000;
 
         auto moves = board.allMoves();
         for (int i = 0 ;i <  moves.getSize(); i++) {
             auto move = moves.getMoves()[i];
             board.makeMove(move);
-            double score = -negaMax(board, depth - 1);
+            int score = -negaMax(board, depth - 1);
             board.unmakeMove(move);
             if (score > max) max = score;
         }
@@ -53,13 +62,14 @@ namespace Search {
     Move rootNegaMax(Board& pos, int depth) {
         Move bestMove;
         pos.checkForGameOver();
-        if (pos.getResult() != 2) return {a1,a1,NORMAL};
+        if (pos.getResult() != 2) return Move();
         double max = - 10000;
         auto moves = pos.allMoves();
         for (int i = 0 ;i <  moves.getSize(); i++) {
             auto move = moves.getMoves()[i];
             pos.makeMove(move);
-            double score = -negaMax(pos, depth - 1);
+            int score = -negaMax(pos, depth - 1);
+            std::cout << move << " - " << score << std::endl;
             pos.unmakeMove(move);
             if (score > max) {
                 max = score;

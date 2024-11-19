@@ -50,9 +50,9 @@ enum Piece{
     EMPTY
 };
 
-enum Color : bool {
-    WHITE = false,
-    BLACK = true
+enum Color {
+    WHITE,
+    BLACK
 };
 
 enum MoveType {
@@ -113,7 +113,8 @@ public:
     }
 
     [[nodiscard]] Piece getPromotion() const {
-        return Piece((actualMove >> 14) & 0b11);}
+        return Piece((actualMove >> 14) & 0b111);}
+
     bool operator==(const Move& other) const {
         return (this->actualMove == other.actualMove);
     }
