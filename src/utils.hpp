@@ -24,6 +24,11 @@ inline uint64 Bit(int n) {
     return 1ULL << n;
 }
 
+inline uint64 millisecondsElapsed(const std::chrono::steady_clock::time_point start)
+{
+    return (std::chrono::steady_clock::now() - start) / std::chrono::milliseconds(1);
+}
+
 inline uint64_t randomuint64() {
     constexpr int rand = 0x1333317;
     static std::mt19937_64 mt(rand);

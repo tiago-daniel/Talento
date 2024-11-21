@@ -11,6 +11,7 @@
 
 inline uint16 nodes = 0;
 inline std::atomic_bool stop = false;
+
 class Search {
 public:
     static uint64 perftAux(Board& pos, int depth, int initial) {
@@ -38,8 +39,9 @@ public:
     static uint64 perft(Board& pos, int depth) {
         return perftAux(pos, depth, depth);
     }
-    static int negaMax(Board& board, int depth) {
-        if (stop) return {};
+    static int negaMax(Board& board, int depth,uint16 maxNodes,
+        std::chrono::time_point<std::chrono::steady_clock> startTime,  uint64 milliseconds) {
+        if (stop or nodes > maxNodes) return {};
         board.checkForGameOver();
         if (board.getResult() != 2) {
             return 1;
@@ -54,13 +56,19 @@ public:
             auto move = moves.getMoves()[i];
             board.makeMove(move);
             ++nodes;
-            int score = -negaMax(board, depth - 1);
+            int score = -negaMax(board, depth - 1, maxNodes, startTime, milliseconds);
             board.unmakeMove(move);
+            if (nodes > maxNodes) stop = true;
+            else if (nodes % 1024 == 0) {
+                if (millisecondsElapsed(startTime) >= milliseconds) stop = true;
+            }
             if (score > max) max = score;
         }
         return max;
     }
-    static Move rootNegaMax(Board& pos, int depth) {
+    static std::tuple<Move,int> rootNegaMax(Board& pos, int depth,uint16 maxNodes,
+        std::chrono::time_point<std::chrono::steady_clock> startTime,  uint64 milliseconds) {
+
         if (stop) return {};
         Move bestMove;
         pos.checkForGameOver();
@@ -71,29 +79,35 @@ public:
             auto move = moves.getMoves()[i];
             pos.makeMove(move);
             ++nodes;
-            int score = -negaMax(pos, depth - 1);
+            int score = -negaMax(pos, depth - 1, maxNodes, startTime, milliseconds);
             pos.unmakeMove(move);
+            if (nodes > maxNodes) stop = true;
+            else if (nodes % 1024 == 0) {
+                if (millisecondsElapsed(startTime) >= milliseconds) stop = true;
+            }
             if (score >= max) {
                 max = score;
                 bestMove = pos.allMoves().getMoves()[i];
             }
         }
 
-        return bestMove;
+        return std::make_pair(bestMove,max);
     }
 
-    static Move iterativeDeepening(Board& pos, const int64 maxDepth, const uint64 maxNodes) {
+    static Move iterativeDeepening(Board& pos, const int64 maxDepth, const uint64 n,
+        std::chrono::time_point<std::chrono::steady_clock> startTime, uint64 milliseconds) {
         Move bestMove = Move();
         int i = 1;
-        while (!stop and i <= maxDepth and nodes <= maxNodes) {
+        while (!stop and i <= maxDepth and nodes <= n) {
             nodes = 0;
-            auto start = std::chrono::high_resolution_clock::now();
-            Move currmove = rootNegaMax(pos,i);
-            auto end = std::chrono::high_resolution_clock::now();
+            auto start = std::chrono::steady_clock::now();
+            auto [currmove,score] = rootNegaMax(pos, i, n, startTime, milliseconds);
+            auto end = std::chrono::steady_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
             if (stop) {break;}
             bestMove = currmove;
-            std::cout << "info depth " << i << " nodes " << nodes << " nps " << nodes*1000000/duration.count() << std::endl;
+            std::cout << "info depth " << i << " nodes " << nodes << " nps " << nodes*1000000/duration.count()
+            << " score cp " << score << std::endl;
             i++;
         }
         return bestMove;

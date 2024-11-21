@@ -65,15 +65,11 @@ public:
      *
      */
     static void go(const std::vector<std::string> & strings) {
-        const std::chrono::time_point<std::chrono::steady_clock> startTime = std::chrono::steady_clock::now();
-
-        int64 milliseconds = std::numeric_limits<int64>::max();
-        [[maybe_unused]] int64 incrementMs = 0;
+        auto startTime = std::chrono::steady_clock::now();
         [[maybe_unused]] int64 movesToGo = 0;
-        bool isMoveTime = false;
         int64 maxDepth = MAX_DEPTH;
         uint64 maxNodes = std::numeric_limits<uint64>::max();
-        uint32 time = 0;
+        uint64 time = std::numeric_limits<uint64>::max();
 
         for (int i = 1; i < int(strings.size()) - 1; i += 2)
         {
@@ -81,20 +77,18 @@ public:
 
             if ((strings[i] == "wtime" && game.getCurrentPlayer() == WHITE)
             ||  (strings[i] == "btime" && game.getCurrentPlayer() == BLACK)) {
-                milliseconds = value;
-                time = (milliseconds / 20);
+                time = (value / 20);
             }
 
             else if ((strings[i] == "winc" && game.getCurrentPlayer() == WHITE)
             ||       (strings[i] == "binc" && game.getCurrentPlayer() == BLACK))
-                incrementMs = value;
+                time += value/2;
 
             else if (strings[i] == "movestogo")
                 movesToGo = std::max<int64>(value, 1);
             else if (strings[i] == "movetime")
             {
-                isMoveTime = true;
-                milliseconds = value;
+                time = value;
             }
             else if (strings[i] == "depth")
                 maxDepth = value;
@@ -102,21 +96,7 @@ public:
                 maxNodes = value;
         }
 
-        // Calculate search time limits
-
-        int64 hardMs = std::max<int64>(0, milliseconds - 10);
-        int64 softMs = std::numeric_limits<int64>::max();
-
-        /* TIME MANAGEMENT
-        if (!isMoveTime) {
-            hardMs *= hardTimePercentage();
-            softMs = hardMs * softTimePercentage();
-        }
-
-        const auto [bestMove, score] = Search::search(maxDepth, maxNodes, startTime, hardMs, softMs, true);
-        */
-        time += incrementMs / 2;
-        auto bestMove = Search::iterativeDeepening(game,maxDepth,maxNodes);
+        auto bestMove = Search::iterativeDeepening(game,maxDepth,maxNodes,startTime, time);
         std::cout << "bestmove " << bestMove << std::endl;
     }
 
