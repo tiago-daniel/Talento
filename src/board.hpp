@@ -160,15 +160,21 @@ public:
             if (pieces[i] != EMPTY) {
                 for (int j = 0; j < 6; j++) {
                     if (j == pieces[i] and !boards[j].hasBit(i)) {
+                        std::cout << Square(i) << " Square should be piece " << j << " but board doesn't have it " << std::endl;
+                        assert(false);
                         return false;
                     }
                     if (boards[j].hasBit(i)) {
                         if  (!(colors[WHITE].hasBit(i) ^ colors[BLACK].hasBit(i))) {
+                            std::cout << Square(i) << " Board of piece " << j << " has this piece but WHITE : " << colors[WHITE].hasBit(i)
+                            << "BLACK : " << colors[BLACK].hasBit(i) << std::endl;
+                            assert(false);
                            return false;
                         }
                         if (j != pieces[i]) {
                             std::cout << Square(i) << " Board of piece " << j << " has this piece but on mailbox it's " << pieces[i]
                             << std::endl;
+                            assert(false);
                             return false;
                         }
                     }
@@ -176,10 +182,15 @@ public:
             }
             else {
                 if (colors[WHITE].hasBit(i) || colors[BLACK].hasBit(i)) {
+                    std::cout << Square(i) << " Should be empty but WHITE : " << colors[WHITE].hasBit(i) << " BLACK : " <<
+                       colors[BLACK].hasBit(i) << std::endl;
+                    assert(false);
                    return false;
                 }
                 for (int j = 0; j < 6; j++) {
                     if (boards[j].hasBit(i)) {
+                        std::cout << Square(i) << " Should be empty but board " << Piece(j) << " has it!" << std::endl;
+                        assert(false);
                         return false;
                     }
                 }
@@ -198,7 +209,7 @@ public:
                 switch (pieces[i]) {
                     case PAWN:
                         MoveGen::pawnMove(moves, static_cast<Color>(currentPlayer), static_cast<Square>(i) ,  allies, enemies);
-                        if (getPassant() != noSquare) MoveGen::passantMove(moves, static_cast<Color>(currentPlayer), static_cast<Square>(i) ,  getPassant());
+                        if (getPassant() != a1) MoveGen::passantMove(moves, static_cast<Color>(currentPlayer), static_cast<Square>(i) ,  getPassant());
                         break;
                     case KNIGHT:
                         MoveGen::knightMove(moves, static_cast<Square>(i), allies);
@@ -265,9 +276,11 @@ public:
                 makeMove(move);
                 if (!isLegal(move)) {
                     unmakeMove(move);
+                    checkIntegrity();
                     continue;
                 }
                 unmakeMove(move);
+                checkIntegrity();
                 moves.push(move);
             }
         }
@@ -336,14 +349,14 @@ public:
 
     Move stringToMove(const std::string &move) {
         const Square from = stringToSquare(move.substr(0, 2));
-        const Square to = stringToSquare(move.substr(2, 4));
+        const Square to = stringToSquare(move.substr(2, 2));
         const Piece movingPiece = pieces[from];
         const Piece capturedPiece = pieces[to];
 
         if (move.size() == 5) {
             return Move{from,to,PROMOTION,stringToPiece(move.back())};
         }
-        if (capturedPiece == EMPTY and movingPiece == PAWN and to != from + 8) {
+        if (capturedPiece == EMPTY and movingPiece == PAWN and (to == from + 7 or to == from + 9 or to == from - 7 or to == from - 9)) {
             return Move{from,to,EN_PASSANT};
         }
         if (movingPiece == KING and abs(to-from) == 2) {
