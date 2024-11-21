@@ -71,16 +71,19 @@ public:
         [[maybe_unused]] int64 incrementMs = 0;
         [[maybe_unused]] int64 movesToGo = 0;
         bool isMoveTime = false;
-        int32 maxDepth = MAX_DEPTH;
-        int64 maxNodes = std::numeric_limits<int64>::max();
+        int64 maxDepth = MAX_DEPTH;
+        uint64 maxNodes = std::numeric_limits<uint64>::max();
+        uint32 time = 0;
 
         for (int i = 1; i < int(strings.size()) - 1; i += 2)
         {
             const int64 value = std::max<int64>(std::stoll(strings[i + 1]), 0);
 
             if ((strings[i] == "wtime" && game.getCurrentPlayer() == WHITE)
-            ||  (strings[i] == "btime" && game.getCurrentPlayer() == BLACK))
+            ||  (strings[i] == "btime" && game.getCurrentPlayer() == BLACK)) {
                 milliseconds = value;
+                time = (milliseconds / 20);
+            }
 
             else if ((strings[i] == "winc" && game.getCurrentPlayer() == WHITE)
             ||       (strings[i] == "binc" && game.getCurrentPlayer() == BLACK))
@@ -112,7 +115,8 @@ public:
 
         const auto [bestMove, score] = Search::search(maxDepth, maxNodes, startTime, hardMs, softMs, true);
         */
-        auto bestMove = Search::iterativeDeepening(game);
+        time += incrementMs / 2;
+        auto bestMove = Search::iterativeDeepening(game,maxDepth,maxNodes);
         std::cout << "bestmove " << bestMove << std::endl;
     }
 
@@ -135,12 +139,11 @@ public:
             }
             else if (strings[0] == "go") {
                 if (searchThread.joinable()) {
+                    stop = true;
                     searchThread.join();
                 }
-                else {
-                    stop = false;
-                    searchThread = std::thread(go,strings);
-                }
+                stop = false;
+                searchThread = std::thread(go,strings);
             }
             else if (strings[0] == "position") {
                 position(strings);

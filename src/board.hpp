@@ -327,6 +327,7 @@ public:
             }
         }
         assert(false);
+        return Square();
     }
 
     [[nodiscard]] bool kingCheck(bool player) {
@@ -702,11 +703,7 @@ public:
 
     void checkForGameOver() {
         int count = 0;
-        if (numberLegal() == 0) {
-            if (kingCheck(currentPlayer)) endGame(currentPlayer * 2 - 1);
-            else endGame(0);
-            return;
-        }
+
         for (int i = 0; i < hashIndex; i++) {
             if (hashHistory[i] == hash) {
                 count+=1;
