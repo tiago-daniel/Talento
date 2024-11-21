@@ -35,16 +35,13 @@ private:
     };
     uint64 hash = 0;
     std::array<uint64,1024> hashHistory{};
-    int hashIndex = 0;
+    uint32 hashIndex = 0;
     int fullMove = 0;
     int result = 2;
     bool currentPlayer = WHITE;
 public:
 
     explicit Board(const std::string &fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") {
-        initAllAttackTables();
-        initMagics();
-        initZobrist();
         std::istringstream fenStream(fen);
         std::string pieces, player, castlingRights, passant, drawCount, fullMove;
         fenStream >> pieces >> player >> castlingRights >> passant >> drawCount >> fullMove;

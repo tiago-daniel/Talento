@@ -1,14 +1,11 @@
 #include "src/uci.hpp"
-#include <chrono>
 
 int main() {
-    while (true) {
-        std::string command;
-        getline(std::cin, command);
-        if (!UCI::runCommand(command)) {
-            break;
-        }
-    }
+    Evaluation::init_tables();
+    initAllAttackTables();
+    initMagics();
+    initZobrist();
+    UCI::runCommands();
 
     return 0;
 }

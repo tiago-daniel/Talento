@@ -23,6 +23,17 @@ public:
         return size;
     }
 
+    void insert(Move move, int pos) {
+        for (int i = size; i >=0; i--) {
+            if (i == pos) {
+                moves[i] = move;
+                return;
+            }
+            moves[i] = moves[i-1];
+        }
+        size++;
+    }
+
     void push(Move move){
         moves[size] = move;
         size++;

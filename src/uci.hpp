@@ -5,7 +5,7 @@
 #ifndef UCI_HPP
 #define UCI_HPP
 
-#include <chrono>
+#include <thread>
 #include "search.hpp"
 
 #define ENGINE_NAME "Talento 0.1"
@@ -23,7 +23,6 @@ public:
     }
 
     static void isReady() {
-        Evaluation::init_tables();
         std::cout << "readyok" << std::endl;
     }
 
@@ -113,33 +112,53 @@ public:
 
         const auto [bestMove, score] = Search::search(maxDepth, maxNodes, startTime, hardMs, softMs, true);
         */
-
-        std::cout << "bestmove " << Search::rootNegaMax(game,4) << std::endl;
+        auto bestMove = Search::iterativeDeepening(game);
+        std::cout << "bestmove " << bestMove << std::endl;
     }
 
-    static bool runCommand(std::string &command) {
-        const auto strings = splitString(command);
-        if (strings.empty()) return true;
+    static void runCommands() {
+        std::string command;
+        std::thread searchThread;
+        while (true) {
+            getline(std::cin, command);
+            const auto strings = splitString(command);
+            if (strings.empty()) continue;
 
-        if (strings[0] == "uci") {
-            uci();
+            if (strings[0] == "uci") {
+                uci();
+            }
+            else if (strings[0] == "ucinewgame") {
+                uciNewGame();
+            }
+            else if (strings[0] == "isready") {
+                isReady();
+            }
+            else if (strings[0] == "go") {
+                if (searchThread.joinable()) {
+                    searchThread.join();
+                }
+                else {
+                    stop = false;
+                    searchThread = std::thread(go,strings);
+                }
+            }
+            else if (strings[0] == "position") {
+                position(strings);
+            }
+            else if (strings[0] == "quit") {
+                stop = true;
+                if (searchThread.joinable()) {
+                    searchThread.join();
+                }
+                return;
+            }
+            else if (strings[0] == "stop") {
+                stop = true;
+                if (searchThread.joinable()) {
+                    searchThread.join();
+                }
+            }
         }
-        else if (strings[0] == "ucinewgame") {
-            uciNewGame();
-        }
-        else if (strings[0] == "isready") {
-            isReady();
-        }
-        else if (strings[0] == "go") {
-            go(strings);
-        }
-        else if (strings[0] == "position") {
-            position(strings);
-        }
-        else if (strings[0] == "quit") {
-            return false;
-        }
-        return true;
     }
 };
 
