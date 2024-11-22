@@ -11,6 +11,7 @@
 
 inline uint16 nodes = 0;
 inline std::atomic_bool stop = false;
+inline int searchedDepth = 0;
 
 class Search {
 public:
@@ -43,20 +44,22 @@ public:
         std::chrono::time_point<std::chrono::steady_clock> startTime,  uint64 milliseconds) {
         if (stop or nodes > maxNodes) return {};
         board.checkForGameOver();
-        if (board.getResult() != 2) {
-            return 1;
+        if (board.getResult() == 0) {
+            return 0;
         }
         if (depth == 0) {
             return Evaluation::eval(board);
         }
-        int max = - 10000;
+        int max = std::numeric_limits<int>::min() + 1;
 
         auto moves = board.allMoves();
         for (int i = 0 ;i <  moves.getSize(); i++) {
             auto move = moves.getMoves()[i];
             board.makeMove(move);
             ++nodes;
+            searchedDepth++;
             int score = -negaMax(board, depth - 1, maxNodes, startTime, milliseconds);
+            searchedDepth--;
             board.unmakeMove(move);
             if (nodes > maxNodes) stop = true;
             else if (nodes % 1024 == 0) {
@@ -64,31 +67,47 @@ public:
             }
             if (score > max) max = score;
         }
-        return max;
+        if (max == std::numeric_limits<int>::min() + 1) {
+            if (!board.kingCheck(board.getCurrentPlayer())) {
+                // STALEMATE
+                return 0;
+            }
+            else return max + searchedDepth;
+        }
+        return  max;
     }
-    static std::tuple<Move,int> rootNegaMax(Board& pos, int depth,uint16 maxNodes,
+    static std::tuple<Move,int> rootNegaMax(Board& board, int depth,uint16 maxNodes,
         std::chrono::time_point<std::chrono::steady_clock> startTime,  uint64 milliseconds) {
 
         if (stop) return {};
         Move bestMove;
-        pos.checkForGameOver();
-        if (pos.getResult() != 2) return {};
-        double max = - 10000;
-        auto moves = pos.allMoves();
+        board.checkForGameOver();
+        if (board.getResult() == 0) return {};
+        int max = std::numeric_limits<int>::min() + 1;
+        auto moves = board.allMoves();
         for (int i = 0 ;i <  moves.getSize(); i++) {
             auto move = moves.getMoves()[i];
-            pos.makeMove(move);
+            board.makeMove(move);
             ++nodes;
-            int score = -negaMax(pos, depth - 1, maxNodes, startTime, milliseconds);
-            pos.unmakeMove(move);
+            searchedDepth++;
+            int score = -negaMax(board, depth - 1, maxNodes, startTime, milliseconds);
+            searchedDepth--;
+            board.unmakeMove(move);
             if (nodes > maxNodes) stop = true;
             else if (nodes % 1024 == 0) {
                 if (millisecondsElapsed(startTime) >= milliseconds) stop = true;
             }
             if (score >= max) {
                 max = score;
-                bestMove = pos.allMoves().getMoves()[i];
+                bestMove = moves.getMoves()[i];
             }
+        }
+        if (max == std::numeric_limits<int>::min() + 1) {
+            if (!board.kingCheck(board.getCurrentPlayer())) {
+                // STALEMATE
+                return std::make_pair(bestMove,0);
+            }
+            else return std::make_pair(bestMove,max + searchedDepth);
         }
 
         return std::make_pair(bestMove,max);
