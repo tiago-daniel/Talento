@@ -53,7 +53,8 @@ public:
         }
 
         for (int i = movesIndex + 1; i < strings.size(); i++) {
-            game.makeMove(game.stringToMove(strings[i]));
+            auto move = game.stringToMove(strings[i]);
+            game.makeMove(move);
         }
     }
 
