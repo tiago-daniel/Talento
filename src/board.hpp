@@ -336,7 +336,7 @@ public:
 
     Move stringToMove(const std::string &move) {
         const Square from = stringToSquare(move.substr(0, 2));
-        const Square to = stringToSquare(move.substr(2, 4));
+        const Square to = stringToSquare(move.substr(2, 2));
         const Piece movingPiece = pieces[from];
         const Piece capturedPiece = pieces[to];
 

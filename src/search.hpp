@@ -21,14 +21,10 @@ public:
         uint64 nodes = 0;
         uint64 curr;
 
-        auto moves = pos.pseudoLegalMoves();
+        auto moves = pos.allMoves();
         for (int i = 0 ;i <  moves.getSize(); i++) {
             auto move = moves.getMoves()[i];
             pos.makeMove(move);
-            if (!pos.isLegal(move)) {
-                pos.unmakeMove(move);
-                continue;
-            }
             curr = perftAux(pos, depth - 1, initial);
             pos.unmakeMove(move);
             nodes += curr;
