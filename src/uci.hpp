@@ -8,7 +8,7 @@
 #include <thread>
 #include "search.hpp"
 
-#define ENGINE_NAME "Talento 0.1"
+#define ENGINE_NAME "Talento 0.1.2"
 
 constexpr int32 MAX_DEPTH = 99;
 

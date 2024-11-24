@@ -276,11 +276,9 @@ public:
                 makeMove(move);
                 if (!isLegal(move)) {
                     unmakeMove(move);
-                    checkIntegrity();
                     continue;
                 }
                 unmakeMove(move);
-                checkIntegrity();
                 moves.push(move);
             }
         }
