@@ -12,8 +12,6 @@
 
 constexpr int32 MAX_DEPTH = 99;
 
-inline Board game;
-
 class UCI {
 public:
     static void uci() {
@@ -26,11 +24,7 @@ public:
         std::cout << "readyok" << std::endl;
     }
 
-    static void uciNewGame() {
-        game = Board();
-    }
-
-    static void position(const std::vector<std::string> & strings) {
+    static void position(const std::vector<std::string> & strings, Board& game) {
 
         int movesIndex = -1;
 
@@ -65,7 +59,7 @@ public:
      * Code is basically copy pasted from zzzzz151/Starzix.
      *
      */
-    static void go(const std::vector<std::string> & strings) {
+    static void go(const std::vector<std::string> & strings, Board game) {
         auto startTime = std::chrono::steady_clock::now();
         [[maybe_unused]] int64 movesToGo = 0;
         int64 maxDepth = MAX_DEPTH;
@@ -102,6 +96,7 @@ public:
     }
 
     static void runCommands() {
+        Board game{};
         std::string command;
         std::thread searchThread;
         while (true) {
@@ -113,7 +108,7 @@ public:
                 uci();
             }
             else if (strings[0] == "ucinewgame") {
-                uciNewGame();
+                game = Board();
             }
             else if (strings[0] == "isready") {
                 isReady();
@@ -124,10 +119,10 @@ public:
                     searchThread.join();
                 }
                 stop = false;
-                searchThread = std::thread(go,strings);
+                searchThread = std::thread(go,strings,std::move(game));
             }
             else if (strings[0] == "position") {
-                position(strings);
+                position(strings, game);
             }
             else if (strings[0] == "quit") {
                 stop = true;

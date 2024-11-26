@@ -10,10 +10,18 @@
 
 class MoveList {
 private:
-    std::array<Move,256> moves{};
+    std::array<Move,256> moves;
     int size = 0;
 public:
     MoveList() = default;
+
+    Move *begin() {
+        return &moves[0];
+    }
+
+    Move *end() {
+        return begin() + size;
+    }
 
     std::array<Move, 256>& getMoves() {
         return moves;

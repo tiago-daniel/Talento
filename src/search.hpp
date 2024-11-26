@@ -36,7 +36,7 @@ public:
     static uint64 perft(Board& pos, int depth) {
         return perftAux(pos, depth, depth);
     }
-    static int negaMax(Board& board, int depth,uint16 maxNodes,
+    static int negaMax(Board &board, int depth,uint16 maxNodes,
         std::chrono::time_point<std::chrono::steady_clock> startTime,  uint64 milliseconds) {
         if (stop or nodes > maxNodes) return {};
         board.checkForGameOver();
@@ -72,7 +72,7 @@ public:
         }
         return  max;
     }
-    static std::tuple<Move,int> rootNegaMax(Board& board, int depth,uint16 maxNodes,
+    static std::tuple<Move,int> rootNegaMax(Board &board, int depth,uint16 maxNodes,
         std::chrono::time_point<std::chrono::steady_clock> startTime,  uint64 milliseconds) {
 
         if (stop) return {};
@@ -109,7 +109,7 @@ public:
         return std::make_pair(bestMove,max);
     }
 
-    static Move iterativeDeepening(Board& pos, const int64 maxDepth, const uint64 n,
+    static Move iterativeDeepening(Board &pos, const int64 maxDepth, const uint64 n,
         std::chrono::time_point<std::chrono::steady_clock> startTime, uint64 milliseconds) {
         Move bestMove = Move();
         int i = 1;
@@ -126,6 +126,24 @@ public:
             i++;
         }
         return bestMove;
+    }
+
+    static int scoreMove(Move move, const Board &game) {
+        auto pieces = game.getPieces();
+        Piece victim = pieces[move.getDestination()];
+        Piece attacker = pieces[move.getOrigin()];
+        if (move.getType() == EN_PASSANT) return 1;
+        if (victim == KING or victim == EMPTY) {
+            return 0;
+        }
+        return ((victim + 1) * 10 + 6 - attacker);
+    }
+
+    static void sortMoves(MoveList &moves, const Board& game) {
+        std::sort(moves.begin(), moves.end(), [game](Move a, Move b)
+                                          {
+                                              return scoreMove(a, game) > scoreMove(b, game);
+                                          });
     }
 };
 
