@@ -38,8 +38,10 @@ public:
         return perftAux(pos, depth, depth);
     }
 
-    int rootNegaMax(Board &board, int depth,uint16 maxNodes,
-        std::chrono::time_point<std::chrono::steady_clock> startTime,  uint64 milliseconds) {
+    int search(Board &board, int depth,int alpha, int beta,uint16 maxNodes = std::numeric_limits<uint16>::max(),
+        std::chrono::time_point<std::chrono::steady_clock>
+        startTime = std::chrono::time_point<std::chrono::steady_clock>::min(),
+        uint64 milliseconds = std::numeric_limits<uint64>::max()) {
 
         if (stop or nodes > maxNodes) {
             stop = true;
@@ -51,26 +53,30 @@ public:
 
         if (depth == 0) return Evaluation::eval(board);
 
-        int max = std::numeric_limits<int>::min() + 1;
+        int max = -31000;
         auto moves = board.allMoves();
         for (int i = 0 ;i <  moves.getSize(); i++) {
             auto move = moves.getMoves()[i];
             board.makeMove(move);
             ++nodes;
             plies++;
-            int score = -rootNegaMax(board, depth - 1, maxNodes, startTime, milliseconds);
+            int score = -search(board, depth - 1,-beta, -alpha, maxNodes, startTime, milliseconds);
             plies--;
             board.unmakeMove(move);
             if (nodes > maxNodes) stop = true;
             else if (nodes % 1024 == 0) {
                 if (millisecondsElapsed(startTime) >= milliseconds) stop = true;
             }
-            if (score >= max) {
+            if (score > max) {
                 max = score;
-                if (plies == 0) currMove = moves.getMoves()[i];
+                if (plies == 0) {
+                    currMove = move;
+                }
+                alpha = std::max(max,alpha);
             }
+            if (score >= beta) return max;
         }
-        if (max == std::numeric_limits<int>::min() + 1) {
+        if (max == -31000) {
             if (!board.kingCheck(board.getCurrentPlayer())) {
                 // STALEMATE
                 return 0;
@@ -88,7 +94,7 @@ public:
         while (!stop and i <= maxDepth and nodes <= n) {
             nodes = 0;
             auto start = std::chrono::steady_clock::now();
-            int score = rootNegaMax(pos, i, n, startTime, milliseconds);
+            int score = search(pos, i,-std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), n, startTime, milliseconds);
             auto end = std::chrono::steady_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
             if (stop) {break;}
