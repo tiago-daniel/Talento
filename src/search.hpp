@@ -55,6 +55,7 @@ public:
 
         int max = -31000;
         auto moves = board.allMoves();
+        sortMoves(moves,board);
         for (int i = 0 ;i <  moves.getSize(); i++) {
             auto move = moves.getMoves()[i];
             board.makeMove(move);
