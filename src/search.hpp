@@ -43,15 +43,10 @@ public:
         startTime = std::chrono::time_point<std::chrono::steady_clock>::min(),
         uint64 milliseconds = std::numeric_limits<uint64>::max()) {
 
-        if (stop or nodes > maxNodes) {
-            stop = true;
-            return {};
-        }
-
         board.checkForGameOver();
         if (board.getResult() == 0) return 0;
 
-        if (depth == 0) return Evaluation::eval(board);
+        if (depth == 0) return qSearch(board,alpha,beta);
 
         int max = -31000;
         auto moves = board.allMoves();
@@ -67,6 +62,9 @@ public:
             if (nodes > maxNodes) stop = true;
             else if (nodes % 1024 == 0) {
                 if (millisecondsElapsed(startTime) >= milliseconds) stop = true;
+            }
+            if (stop) {
+                return 0;
             }
             if (score > max) {
                 max = score;
@@ -113,6 +111,7 @@ public:
         Piece attacker = pieces[move.getOrigin()];
         if (move.getType() == EN_PASSANT) return 1;
         if (victim == KING or victim == EMPTY) {
+            assert(victim != KING);
             return 0;
         }
         return ((victim + 1) * 10 + 6 - attacker);
@@ -123,6 +122,27 @@ public:
                                           {
                                               return scoreMove(a, game) > scoreMove(b, game);
                                           });
+    }
+
+    static int qSearch(Board& board, int alpha, int beta) {
+        int standPat = Evaluation::eval(board);
+
+        if(standPat >= beta) return beta;
+        if (standPat > alpha) alpha = standPat;
+
+        auto moves = board.allMoves();
+        sortMoves(moves,board);
+        for (int i = 0 ;i <  moves.getSize(); i++) {
+            auto move = moves.getMoves()[i];
+            if (board.getPieces()[move.getDestination()] == EMPTY) break;
+            board.makeMove(move);
+            int score = -qSearch(board,-beta, -alpha);
+            board.unmakeMove(move);
+
+            if (score >= beta) return beta;
+            if (score > alpha) alpha = score;
+        }
+        return alpha;
     }
 };
 
