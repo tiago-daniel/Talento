@@ -34,7 +34,7 @@ public:
         }
 
         else if (strings[1] == "fen") {
-            std::string fen = "";
+            std::string fen;
             int i = 0;
 
             for (i = 2; i < strings.size() && strings[i] != "moves"; i++) {
@@ -90,13 +90,13 @@ public:
             else if (strings[i] == "nodes")
                 maxNodes = value;
         }
-
-        auto bestMove = Search::iterativeDeepening(game,maxDepth,maxNodes,startTime, time);
-        std::cout << "bestmove " << bestMove << std::endl;
+        auto search = Search();
+        search.iterativeDeepening(game,maxDepth,maxNodes,startTime, time);
+        std::cout << "bestmove " << search.getBestMove() << std::endl;
     }
 
     static void runCommands() {
-        Board game{};
+        auto game = Board();
         std::string command;
         std::thread searchThread;
         while (true) {
@@ -119,7 +119,7 @@ public:
                     searchThread.join();
                 }
                 stop = false;
-                searchThread = std::thread(go,strings,std::move(game));
+                searchThread = std::thread(go,strings,game);
             }
             else if (strings[0] == "position") {
                 position(strings, game);

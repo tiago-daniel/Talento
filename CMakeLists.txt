@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.29)
 project(Talento)
 
-#set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Debug)
 
 # Add global compiler options
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address,undefined,thread -g -Wall -Wextra")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address,undefined,thread -g -Wall -Wextra")
 
-set(CMAKE_BUILD_TYPE Release)
+#set(CMAKE_BUILD_TYPE Release)
 
 set(CMAKE_CXX_FLAGS "-O3")
 
@@ -33,5 +33,4 @@ add_executable(Talento main.cpp
         src/search.hpp
         src/evaluation.hpp
         src/uci.hpp
-        src/moveorder.hpp
 )
