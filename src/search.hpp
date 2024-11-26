@@ -128,7 +128,7 @@ public:
         uint64 milliseconds) {
         int standPat = Evaluation::eval(board);
 
-        if(standPat >= beta) return beta;
+        if(standPat >= beta) return standPat;
         if (standPat > alpha) alpha = standPat;
 
         auto moves = board.allMoves();
@@ -140,14 +140,14 @@ public:
             board.makeMove(move);
             int score = -qSearch(board,-beta, -alpha, startTime, milliseconds);
             board.unmakeMove(move);
-            if (score >= beta) return beta;
+            if (score >= beta) return score;
             if (score > alpha) alpha = score;
             if (nodes % 1024 == 0) {
                 if (millisecondsElapsed(startTime) >= milliseconds) stop = true;
             }
             if (stop) return {};
         }
-        return alpha;
+        return standPat;
     }
 };
 
