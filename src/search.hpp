@@ -46,7 +46,7 @@ public:
         board.checkForGameOver();
         if (board.getResult() == 0) return 0;
 
-        if (depth == 0) return qSearch(board,alpha,beta);
+        if (depth == 0) return qSearch(board,alpha,beta,startTime,milliseconds);
 
         int max = -31000;
         auto moves = board.allMoves();
@@ -64,7 +64,7 @@ public:
                 if (millisecondsElapsed(startTime) >= milliseconds) stop = true;
             }
             if (stop) {
-                return 0;
+                return {};
             }
             if (score > max) {
                 max = score;
@@ -124,7 +124,8 @@ public:
                                           });
     }
 
-    static int qSearch(Board& board, int alpha, int beta) {
+    int qSearch(Board& board, int alpha, int beta, std::chrono::time_point<std::chrono::steady_clock> startTime,
+        uint64 milliseconds) {
         int standPat = Evaluation::eval(board);
 
         if(standPat >= beta) return beta;
@@ -135,12 +136,16 @@ public:
         for (int i = 0 ;i <  moves.getSize(); i++) {
             auto move = moves.getMoves()[i];
             if (board.getPieces()[move.getDestination()] == EMPTY) break;
+            ++nodes;
             board.makeMove(move);
-            int score = -qSearch(board,-beta, -alpha);
+            int score = -qSearch(board,-beta, -alpha, startTime, milliseconds);
             board.unmakeMove(move);
-
             if (score >= beta) return beta;
             if (score > alpha) alpha = score;
+            if (nodes % 1024 == 0) {
+                if (millisecondsElapsed(startTime) >= milliseconds) stop = true;
+            }
+            if (stop) return {};
         }
         return alpha;
     }
