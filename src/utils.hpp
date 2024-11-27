@@ -122,7 +122,7 @@ public:
     }
 
     [[nodiscard]] Piece getPromotion() const {
-        return Piece((actualMove >> 14) + 1 & 0b11);}
+        return Piece((actualMove >> 14 & 0b11) + 1);}
 
     bool operator==(const Move& other) const {
         return (this->actualMove == other.actualMove);
