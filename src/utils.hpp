@@ -101,8 +101,8 @@ private:
 public:
     Move() = default;
 
-    Move(Square origin, Square destination, MoveType type, Piece promotion = PAWN) {
-        actualMove = origin + (destination << 6) + (type << 12) + (promotion << 14);
+    Move(Square origin, Square destination, MoveType type, Piece promotion = QUEEN) {
+        actualMove = origin + (destination << 6) + (type << 12) + (promotion - 1 << 14);
     }
 
     explicit Move(uint16 actualMove) {
@@ -122,7 +122,7 @@ public:
     }
 
     [[nodiscard]] Piece getPromotion() const {
-        return Piece((actualMove >> 14) & 0b111);}
+        return Piece((actualMove >> 14) + 1 & 0b11);}
 
     bool operator==(const Move& other) const {
         return (this->actualMove == other.actualMove);

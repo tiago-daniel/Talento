@@ -12,8 +12,6 @@ set(CMAKE_CXX_FLAGS "-O3")
 
 # WINDOWS STATIC EXE
 #[===[
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx2")
 set(CMAKE_SYSTEM_NAME Windows)
 set(CMAKE_C_COMPILER x86_64-w64-mingw32-gcc)
 set(CMAKE_CXX_COMPILER x86_64-w64-mingw32-g++)
