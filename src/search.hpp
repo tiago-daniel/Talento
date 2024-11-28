@@ -9,7 +9,6 @@
 #include <chrono>
 #include <atomic>
 
-using namespace MoveOrder;
 
 inline uint16 nodes = 0;
 inline std::atomic_bool stop = false;
@@ -53,16 +52,15 @@ public:
 
         int max = -31000;
         auto moves = board.allMoves();
-        scoreMoves(moves,board);
+        MoveOrder::scoreMoves(moves,board);
         for (int i = 0 ;i <  moves.getSize(); i++) {
-            std::swap(moves.getMoves()[i], moves.getMoves()[indexHighestMove(moves,i)]);
-            auto move = moves.getMoves()[i];
-            board.makeMove(move);
+            std::swap(moves.getMoves()[i], moves.getMoves()[MoveOrder::indexHighestMove(moves,i)]);
+            board.makeMove(moves.getMoves()[i]);
             ++nodes;
             plies++;
             int score = -search(board, depth - 1,-beta, -alpha, maxNodes, startTime, milliseconds);
             plies--;
-            board.unmakeMove(move);
+            board.unmakeMove(moves.getMoves()[i]);
             if (nodes > maxNodes) stop = true;
             else if (nodes % 1024 == 0) {
                 if (millisecondsElapsed(startTime) >= milliseconds) stop = true;
@@ -73,7 +71,7 @@ public:
             if (score > max) {
                 max = score;
                 if (plies == 0) {
-                    currMove = move;
+                    currMove = moves.getMoves()[i];
                 }
                 alpha = std::max(max,alpha);
             }
@@ -120,15 +118,14 @@ public:
         if (standPat > alpha) alpha = standPat;
 
         auto moves = board.allMoves();
-        scoreMoves(moves,board);
+        MoveOrder::scoreMoves(moves,board);
         for (int i = 0 ;i <  moves.getSize(); i++) {
-            std::swap(moves.getMoves()[i], moves.getMoves()[indexHighestMove(moves,i)]);
-            auto move = moves.getMoves()[i];
-            if (board.getPieces()[move.getDestination()] == EMPTY) break;
+            std::swap(moves.getMoves()[i], moves.getMoves()[MoveOrder::indexHighestMove(moves,i)]);
+            if (board.getPieces()[moves.getMoves()[i].getDestination()] == EMPTY) break;
             ++nodes;
-            board.makeMove(move);
+            board.makeMove(moves.getMoves()[i]);
             int score = -qSearch(board,-beta, -alpha, startTime, milliseconds);
-            board.unmakeMove(move);
+            board.unmakeMove(moves.getMoves()[i]);
             if (score >= beta) return score;
             if (score > alpha) alpha = score;
             if (nodes % 1024 == 0) {

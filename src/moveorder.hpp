@@ -44,9 +44,9 @@ namespace MoveOrder {
 
     static void sortMoves(MoveList &moves, const Board& game) {
         std::sort(moves.begin(), moves.end(), [&game](Move a, Move b)
-                                          {
-                                              return scoreMove(a, game) > scoreMove(b, game);
-                                          });
+            {
+                return scoreMove(a, game) > scoreMove(b, game);
+            });
     }
 };
 
