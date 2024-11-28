@@ -5,15 +5,18 @@
 #ifndef SEARCH_HPP
 #define SEARCH_HPP
 
-#include "evaluation.hpp"
+#include "moveorder.hpp"
 #include <chrono>
 #include <atomic>
+
+using namespace MoveOrder;
 
 inline uint16 nodes = 0;
 inline std::atomic_bool stop = false;
 
 class Search {
     Move currMove = Move();
+    Move bestMove = Move();
     uint8 plies = 0;
 public:
     static uint64 perftAux(Board& pos, int depth, int initial) {
@@ -50,8 +53,9 @@ public:
 
         int max = -31000;
         auto moves = board.allMoves();
-        sortMoves(moves,board);
+        scoreMoves(moves,board);
         for (int i = 0 ;i <  moves.getSize(); i++) {
+            std::swap(moves.getMoves()[i], moves.getMoves()[indexHighestMove(moves,i)]);
             auto move = moves.getMoves()[i];
             board.makeMove(move);
             ++nodes;
@@ -86,9 +90,9 @@ public:
         return max;
     }
 
-    Move iterativeDeepening(Board &pos, const int64 maxDepth, const uint64 n,
-        std::chrono::time_point<std::chrono::steady_clock> startTime, uint64 milliseconds) {
-        Move bestMove = Move();
+    void iterativeDeepening(Board &pos, const int64 maxDepth = std::numeric_limits<int64>::max(), const uint64 n = std::numeric_limits<uint64>::max(),
+        std::chrono::time_point<std::chrono::steady_clock> startTime = std::chrono::steady_clock::now(),
+        uint64 milliseconds = std::numeric_limits<uint64>::max()) {
         int i = 1;
         while (!stop and i <= maxDepth and nodes <= n) {
             nodes = 0;
@@ -102,26 +106,10 @@ public:
             << " score cp " << score << std::endl;
             i++;
         }
+    }
+
+    [[nodiscard]] Move getBestMove() const {
         return bestMove;
-    }
-
-    static int scoreMove(Move move, const Board &game) {
-        auto pieces = game.getPieces();
-        Piece victim = pieces[move.getDestination()];
-        Piece attacker = pieces[move.getOrigin()];
-        if (move.getType() == EN_PASSANT) return 1;
-        if (victim == KING or victim == EMPTY) {
-            assert(victim != KING);
-            return 0;
-        }
-        return ((victim + 1) * 10 + 6 - attacker);
-    }
-
-    static void sortMoves(MoveList &moves, const Board& game) {
-        std::sort(moves.begin(), moves.end(), [game](Move a, Move b)
-                                          {
-                                              return scoreMove(a, game) > scoreMove(b, game);
-                                          });
     }
 
     int qSearch(Board& board, int alpha, int beta, std::chrono::time_point<std::chrono::steady_clock> startTime,
@@ -132,8 +120,9 @@ public:
         if (standPat > alpha) alpha = standPat;
 
         auto moves = board.allMoves();
-        sortMoves(moves,board);
+        scoreMoves(moves,board);
         for (int i = 0 ;i <  moves.getSize(); i++) {
+            std::swap(moves.getMoves()[i], moves.getMoves()[indexHighestMove(moves,i)]);
             auto move = moves.getMoves()[i];
             if (board.getPieces()[move.getDestination()] == EMPTY) break;
             ++nodes;

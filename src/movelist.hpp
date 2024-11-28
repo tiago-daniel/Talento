@@ -23,9 +23,13 @@ public:
         return begin() + size;
     }
 
-    std::array<Move, 256>& getMoves() {
+    std::array<Move, 256>& getMoves(){
         return moves;
-    };
+    }
+
+    void swap(int a, int b) {
+        std::swap(moves[a], moves[b]);
+    }
 
     [[nodiscard]] int getSize() const {
         return size;

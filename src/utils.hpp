@@ -98,6 +98,7 @@ public:
 struct Move {
 private:
     uint16 actualMove = 0;
+    int score = 0;
 public:
     Move() = default;
 
@@ -107,6 +108,14 @@ public:
 
     explicit Move(uint16 actualMove) {
         this->actualMove = actualMove;
+    }
+
+    void setScore(int score) {
+        this->score = score;
+    }
+
+    [[nodiscard]] int getScore() const {
+        return score;
     }
 
     [[nodiscard]] Square getOrigin() const {
