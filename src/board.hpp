@@ -120,6 +120,10 @@ public:
         return this->boards;
     }
 
+    [[nodiscard]] uint64 getZobrist() const {
+        return this->hash;
+    }
+
     void hashSquare(uint64 &hash, const Square square) const {
         if (pieces[square] == EMPTY or square == noSquare) {return;}
         hash^=zobristTable[square][pieces[square] + 6 * colors[BLACK].hasBit(square)];

@@ -9,6 +9,8 @@
 #include <chrono>
 #include <atomic>
 
+#include "tt.hpp"
+
 
 inline uint16 nodes = 0;
 inline std::atomic_bool stop = false;
@@ -18,6 +20,13 @@ class Search {
     Move bestMove = Move();
     uint8 plies = 0;
 public:
+
+    std::vector<TTEntry> transpositionTable{};
+
+    explicit Search(const int64 hashSize = 32) {
+        resizeTT(transpositionTable,hashSize);
+    };
+
     static uint64 perftAux(Board& pos, int depth, int initial) {
         if (depth == 0) {
             return 1ULL;
@@ -50,9 +59,17 @@ public:
 
         if (depth == 0) return qSearch(board,alpha,beta,startTime,milliseconds);
 
+        const uint64 ttEntryIndex = TTEntryIndex(board.getHash(),transpositionTable.size());
+        uint16 ttMove = 0;
+        TTEntry &ttEntry = transpositionTable[ttEntryIndex];
+        if (ttEntry.zobristHash == board.getHash()) {
+            ttMove = ttEntry.actualMove;
+        }
+
         int max = -31000;
         auto moves = board.allMoves();
-        MoveOrder::scoreMoves(moves,board);
+        MoveOrder::scoreMoves(moves,board,ttMove);
+        bool alphaChanged = false;
         for (int i = 0 ;i <  moves.getSize(); i++) {
             std::swap(moves.getMoves()[i], moves.getMoves()[MoveOrder::indexHighestMove(moves,i)]);
             board.makeMove(moves.getMoves()[i]);
@@ -61,9 +78,15 @@ public:
             int score = -search(board, depth - 1,-beta, -alpha, maxNodes, startTime, milliseconds);
             plies--;
             board.unmakeMove(moves.getMoves()[i]);
-            if (nodes > maxNodes) stop = true;
-            else if (nodes % 1024 == 0) {
-                if (millisecondsElapsed(startTime) >= milliseconds) stop = true;
+            if (nodes > maxNodes) {
+                stop = true;
+                return {};
+            }
+            if (nodes % 1024 == 0) {
+                if (millisecondsElapsed(startTime) >= milliseconds) {
+                    stop = true;
+                    return {};
+                }
             }
             if (stop) {
                 return {};
@@ -73,9 +96,17 @@ public:
                 if (plies == 0) {
                     currMove = moves.getMoves()[i];
                 }
-                alpha = std::max(max,alpha);
+                if (max > alpha) {
+                    alpha = max;
+                    alphaChanged = true;
+                }
             }
-            if (score >= beta) return max;
+            if (score >= beta) {
+                if (alphaChanged) {
+                    ttEntry.update(board.getHash(),currMove.getMoveCode());
+                }
+                return max;
+            }
         }
         if (max == -31000) {
             if (!board.kingCheck(board.getCurrentPlayer())) {
@@ -84,7 +115,9 @@ public:
             }
             return max + plies;
         }
-
+        if (alphaChanged) {
+            ttEntry.update(board.getHash(),currMove.getMoveCode());
+        }
         return max;
     }
 
