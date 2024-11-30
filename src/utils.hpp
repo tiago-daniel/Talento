@@ -12,6 +12,7 @@
 #include <sstream>
 #include <chrono>
 
+typedef __uint128_t uint128;
 typedef uint_fast64_t uint64;
 typedef uint_fast32_t uint32;
 typedef uint_fast16_t uint16;
@@ -116,6 +117,10 @@ public:
 
     [[nodiscard]] int getScore() const {
         return score;
+    }
+
+    [[nodiscard]] uint16 getCode() const {
+        return actualMove;
     }
 
     [[nodiscard]] Square getOrigin() const {

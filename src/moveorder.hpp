@@ -20,11 +20,12 @@ namespace MoveOrder {
         return ((victim + 1) * 10 + 6 - attacker);
     }
 
-    static void scoreMoves(MoveList &movelist, const Board &board) {
+    static void scoreMoves(MoveList &movelist, const Board &board, Move move = Move()) {
         auto& moves = movelist.getMoves();
         auto size = movelist.getSize();
         for (int i = 0; i < size; i++) {
             moves[i].setScore(scoreMove(moves[i],board));
+            if (moves[i] == move and move != Move()) moves[i].setScore(100);
         }
     }
 

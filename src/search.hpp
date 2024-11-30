@@ -6,18 +6,22 @@
 #define SEARCH_HPP
 
 #include "moveorder.hpp"
+#include "tt.hpp"
 #include <chrono>
 #include <atomic>
 
 
-inline uint16 nodes = 0;
 inline std::atomic_bool stop = false;
 
 class Search {
+    uint16 nodes = 0;
     Move currMove = Move();
     Move bestMove = Move();
     uint8 plies = 0;
 public:
+
+    TT transpositionTable = TT(32);
+
     static uint64 perftAux(Board& pos, int depth, int initial) {
         if (depth == 0) {
             return 1ULL;
@@ -44,6 +48,12 @@ public:
         std::chrono::time_point<std::chrono::steady_clock>
         startTime = std::chrono::time_point<std::chrono::steady_clock>::min(),
         uint64 milliseconds = std::numeric_limits<uint64>::max()) {
+        if (nodes % 1024 == 0) {
+            if (millisecondsElapsed(startTime) >= milliseconds) stop = true;
+        }
+        if (stop) {
+            return {};
+        }
 
         board.checkForGameOver();
         if (board.getResult() == 0) return 0;
@@ -51,8 +61,14 @@ public:
         if (depth == 0) return qSearch(board,alpha,beta,startTime,milliseconds);
 
         int max = -31000;
-        auto moves = board.allMoves();
-        MoveOrder::scoreMoves(moves,board);
+        MoveList moves = board.allMoves();
+
+        if (transpositionTable.entry(board.getHash()).zobrist == board.getHash())
+            MoveOrder::scoreMoves(moves,board,Move(transpositionTable.entry(board.getHash()).actualMove));
+
+        else MoveOrder::scoreMoves(moves,board);
+        bool alphaChanged = false;
+
         for (int i = 0 ;i <  moves.getSize(); i++) {
             std::swap(moves.getMoves()[i], moves.getMoves()[MoveOrder::indexHighestMove(moves,i)]);
             board.makeMove(moves.getMoves()[i]);
@@ -62,9 +78,6 @@ public:
             plies--;
             board.unmakeMove(moves.getMoves()[i]);
             if (nodes > maxNodes) stop = true;
-            else if (nodes % 1024 == 0) {
-                if (millisecondsElapsed(startTime) >= milliseconds) stop = true;
-            }
             if (stop) {
                 return {};
             }
@@ -73,9 +86,17 @@ public:
                 if (plies == 0) {
                     currMove = moves.getMoves()[i];
                 }
-                alpha = std::max(max,alpha);
             }
-            if (score >= beta) return max;
+            if (score > alpha) {
+                alpha = score;
+                alphaChanged = true;
+            }
+            if (score >= beta) {
+                if (alphaChanged) {
+                    transpositionTable.update(board.getHash(), currMove.getCode());
+                }
+                return max;
+            }
         }
         if (max == -31000) {
             if (!board.kingCheck(board.getCurrentPlayer())) {
@@ -84,7 +105,9 @@ public:
             }
             return max + plies;
         }
-
+        if (alphaChanged) {
+            transpositionTable.update(board.getHash(), currMove.getCode());
+        }
         return max;
     }
 
