@@ -12,29 +12,19 @@
 
 constexpr int32 MAX_DEPTH = 99;
 
-namespace UCI {
-    inline void uci() {
+class UCI {
+public:
+    static void uci() {
         std::cout << "id name " << ENGINE_NAME << std::endl;
         std::cout << "id author Tiago Daniel" << std::endl;
-        std::cout << "option name Hash type spin default 32 min 1 max 1048576" << std::endl;
         std::cout << "uciok" << std::endl;
     }
 
-    inline void isReady() {
+    static void isReady() {
         std::cout << "readyok" << std::endl;
     }
 
-    inline void setoption(const std::vector<std::string> &tokens, Search &search) {
-        const std::string& optionName  = tokens[2];
-        const std::string& optionValue = tokens[4];
-
-        if (optionName == "Hash" || optionName == "hash")
-        {
-            resizeTT(search.transpositionTable, stoll(optionValue));
-            sizeTT(search.transpositionTable);
-        }
-    }
-    inline void position(const std::vector<std::string> & strings, Board& game) {
+    static void position(const std::vector<std::string> & strings, Board& game) {
 
         int movesIndex = -1;
 
@@ -69,7 +59,7 @@ namespace UCI {
      * Code is basically copy pasted from zzzzz151/Starzix.
      *
      */
-    inline void go(const std::vector<std::string> & strings, Board game, Search search) {
+    static void go(const std::vector<std::string> & strings, Board game) {
         auto startTime = std::chrono::steady_clock::now();
         [[maybe_unused]] int64 movesToGo = 0;
         int64 maxDepth = MAX_DEPTH;
@@ -100,13 +90,13 @@ namespace UCI {
             else if (strings[i] == "nodes")
                 maxNodes = value;
         }
+        auto search = Search();
         search.iterativeDeepening(game,maxDepth,maxNodes,startTime, time);
         std::cout << "bestmove " << search.getBestMove() << std::endl;
     }
 
-    inline void runCommands() {
+    static void runCommands() {
         auto game = Board();
-        auto search = Search();
         std::string command;
         std::thread searchThread;
         while (true) {
@@ -119,11 +109,6 @@ namespace UCI {
             }
             else if (strings[0] == "ucinewgame") {
                 game = Board();
-                search = Search();
-
-            }
-            else if (strings[0] == "setoption") {
-                setoption(strings, search);
             }
             else if (strings[0] == "isready") {
                 isReady();
@@ -134,7 +119,7 @@ namespace UCI {
                     searchThread.join();
                 }
                 stop = false;
-                searchThread = std::thread(go,strings,game,search);
+                searchThread = std::thread(go,strings,game);
             }
             else if (strings[0] == "position") {
                 position(strings, game);

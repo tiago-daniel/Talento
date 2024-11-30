@@ -11,8 +11,8 @@
 ## Search
 
 -  Alpha-beta pruning negamax search
+
 -  Quiescent Search
--  Transposition Table
 
 # Credits
 

@@ -18,9 +18,6 @@ typedef uint_fast16_t uint16;
 typedef uint_fast8_t uint8;
 typedef int64_t int64;
 typedef int32_t int32;
-typedef int16_t int16;
-typedef int8_t int8;
-typedef __uint128_t uint128;
 
 
 inline uint64 Bit(int n) {
@@ -115,10 +112,6 @@ public:
 
     void setScore(int score) {
         this->score = score;
-    }
-
-    [[nodiscard]] uint16 getMoveCode() const {
-        return actualMove;
     }
 
     [[nodiscard]] int getScore() const {

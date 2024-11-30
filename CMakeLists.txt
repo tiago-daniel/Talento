@@ -32,5 +32,4 @@ add_executable(Talento main.cpp
         src/evaluation.hpp
         src/uci.hpp
         src/moveorder.hpp
-        src/tt.hpp
 )
