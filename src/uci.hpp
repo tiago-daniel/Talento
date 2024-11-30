@@ -6,25 +6,33 @@
 #define UCI_HPP
 
 #include <thread>
+
+#include "bench.hpp"
 #include "search.hpp"
 
 #define ENGINE_NAME "Talento 0.2.0"
 
 constexpr int32 MAX_DEPTH = 99;
 
-namespace UCI {
-    inline void uci() {
+class UCI {
+private:
+    Board game;
+    Search search;
+public:
+    UCI() = default;
+
+    static void uci() {
         std::cout << "id name " << ENGINE_NAME << std::endl;
         std::cout << "id author Tiago Daniel" << std::endl;
         std::cout << "option name Hash type spin default 32 min 1 max 1048576" << std::endl;
         std::cout << "uciok" << std::endl;
     }
 
-    inline void isReady() {
+    static void isReady() {
         std::cout << "readyok" << std::endl;
     }
 
-    inline void position(const std::vector<std::string> & strings, Board& game) {
+    void position(const std::vector<std::string> & strings) {
 
         int movesIndex = -1;
 
@@ -52,12 +60,11 @@ namespace UCI {
         }
     }
 
-    inline void setoption(const std::vector<std::string> &tokens, Search &search) {
+    void setoption(const std::vector<std::string> &tokens) {
         const std::string& optionName  = tokens[2];
         const std::string& optionValue = tokens[4];
 
-        if (optionName == "Hash" || optionName == "hash")
-        {
+        if (optionName == "Hash" || optionName == "hash") {
             search.transpositionTable.resize(stoll(optionValue));
             search.transpositionTable.size();
         }
@@ -71,7 +78,7 @@ namespace UCI {
      * Code is basically copy pasted from zzzzz151/Starzix.
      *
      */
-    inline void go(const std::vector<std::string> & strings, Board game) {
+    void go(const std::vector<std::string> & strings) {
         auto startTime = std::chrono::steady_clock::now();
         [[maybe_unused]] int64 movesToGo = 0;
         int64 maxDepth = MAX_DEPTH;
@@ -102,14 +109,17 @@ namespace UCI {
             else if (strings[i] == "nodes")
                 maxNodes = value;
         }
-        auto search = Search();
+
         search.iterativeDeepening(game,maxDepth,maxNodes,startTime, time);
         std::cout << "bestmove " << search.getBestMove() << std::endl;
     }
 
-    inline void runCommands() {
-        auto game = Board();
-        auto search = Search();
+    void uciNewGame() {
+         game = Board();
+         search = Search();
+     }
+
+    void runCommands() {
         std::string command;
         std::thread searchThread;
         while (true) {
@@ -121,7 +131,7 @@ namespace UCI {
                 uci();
             }
             else if (strings[0] == "ucinewgame") {
-                game = Board();
+                uciNewGame();
             }
             else if (strings[0] == "isready") {
                 isReady();
@@ -132,13 +142,13 @@ namespace UCI {
                     searchThread.join();
                 }
                 stop = false;
-                searchThread = std::thread(go,strings,game);
+                searchThread = std::thread(&UCI::go,this,strings);
             }
             else if (strings[0] == "position") {
-                position(strings, game);
+                position(strings);
             }
             else if (strings[0] == "setoption") {
-                setoption(strings, search);
+                setoption(strings);
             }
             else if (strings[0] == "quit") {
                 stop = true;
@@ -152,6 +162,10 @@ namespace UCI {
                 if (searchThread.joinable()) {
                     searchThread.join();
                 }
+            }
+            // NON UCI COMMANDS
+            else if (strings[0] == "bench") {
+                bench();
             }
         }
     }

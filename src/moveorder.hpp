@@ -25,7 +25,9 @@ namespace MoveOrder {
         auto size = movelist.getSize();
         for (int i = 0; i < size; i++) {
             moves[i].setScore(scoreMove(moves[i],board));
-            if (moves[i] == move and move != Move()) moves[i].setScore(100);
+            if (moves[i] == move and move != Move()) {
+                moves[i].setScore(100);
+            }
         }
     }
 

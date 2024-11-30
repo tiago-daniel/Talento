@@ -5,7 +5,8 @@ int main() {
     initAllAttackTables();
     initMagics();
     initZobrist();
-    UCI::runCommands();
+    UCI uci{};
+    uci.runCommands();
 
     return 0;
 }

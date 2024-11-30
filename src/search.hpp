@@ -60,15 +60,14 @@ public:
 
         if (depth == 0) return qSearch(board,alpha,beta,startTime,milliseconds);
 
+        uint16 ttMove = 0;
+        TTEntry ttEntry = transpositionTable.entry(board.getHash());
+        //if (ttEntry.zobrist == board.getHash()) ttMove = ttEntry.actualMove;
+
         int max = -31000;
         MoveList moves = board.allMoves();
-
-        if (transpositionTable.entry(board.getHash()).zobrist == board.getHash())
-            MoveOrder::scoreMoves(moves,board,Move(transpositionTable.entry(board.getHash()).actualMove));
-
-        else MoveOrder::scoreMoves(moves,board);
         bool alphaChanged = false;
-
+        MoveOrder::scoreMoves(moves,board,Move(ttMove));
         for (int i = 0 ;i <  moves.getSize(); i++) {
             std::swap(moves.getMoves()[i], moves.getMoves()[MoveOrder::indexHighestMove(moves,i)]);
             board.makeMove(moves.getMoves()[i]);
@@ -86,10 +85,10 @@ public:
                 if (plies == 0) {
                     currMove = moves.getMoves()[i];
                 }
-            }
-            if (score > alpha) {
-                alpha = score;
-                alphaChanged = true;
+                if (max > alpha) {
+                    alpha = max;
+                    alphaChanged = true;
+                }
             }
             if (score >= beta) {
                 if (alphaChanged) {
@@ -125,12 +124,18 @@ public:
             bestMove = currMove;
             std::cout << "info depth " << i << " nodes " << nodes << " nps " << nodes*1000000/duration.count()
             << " score cp " << score << std::endl;
+            if (millisecondsElapsed(startTime) > milliseconds / 3) break;
             i++;
         }
     }
 
     [[nodiscard]] Move getBestMove() const {
-        return bestMove;
+        if (bestMove != Move()) return bestMove;
+        return currMove;
+    }
+
+    [[nodiscard]] uint16 getNodes() const {
+        return nodes;
     }
 
     int qSearch(Board& board, int alpha, int beta, std::chrono::time_point<std::chrono::steady_clock> startTime,

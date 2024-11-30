@@ -54,7 +54,7 @@ public:
     }
 
     void size() {
-        std::cout << "info string TT size " << round(uint64(transpositionTable.size()) * sizeof(TTEntry) * 1024 * 1024)
+        std::cout << "info string TT size " << round(uint64(transpositionTable.size()) * sizeof(TTEntry) / 1024 / 1024)
                 << " MB"
                 << " (" << transpositionTable.size() << " entries)"
                 << std::endl;
