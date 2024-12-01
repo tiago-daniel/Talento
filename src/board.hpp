@@ -111,6 +111,9 @@ public:
                 }
             }
         }
+        hash ^= canCastle;
+        if (currentPlayer == BLACK) hash ^= blackHash;
+        hashHistory[hashIndex++] = hash;
         auto halfMove = !drawCount.empty() ? std::stoi(drawCount) : 0;
         this->stack.emplace_back(newPassant, canCastle, EMPTY, halfMove);
         if (!fullMove.empty()) this->fullMove = std::stoi(fullMove);
@@ -790,5 +793,9 @@ public:
 
     [[nodiscard]] std::array<Bitboard, 2>& getColors() {
         return this->colors;
+    }
+
+    bool operator==(const Board& other) const {
+        return (this->hash == other.hash);
     }
 };

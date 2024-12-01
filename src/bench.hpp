@@ -83,10 +83,10 @@ inline void bench(const int depth = 5) {
         milliseconds += millisecondsElapsed(startTime);
     }
     totalNodes = search.getNodes();
-    std::cout << totalNodes / 1000000 << " Mnodes "
-              << totalNodes / std::max(milliseconds, (uint64)1) << " knps "
-    << std::max(milliseconds /1000, (uint64)1) << " seconds"
-              << std::endl;
+    std::cout   << totalNodes << " nodes "
+                << totalNodes * 1000 / std::max(milliseconds, (uint64)1) << " nps "
+                << std::max(milliseconds /1000, (uint64)1) << " seconds"
+                << std::endl;
 }
 
 

@@ -61,8 +61,9 @@ public:
         if (depth == 0) return qSearch(board,alpha,beta,startTime,milliseconds);
 
         uint16 ttMove = 0;
-        TTEntry ttEntry = transpositionTable.entry(board.getHash());
-        //if (ttEntry.zobrist == board.getHash()) ttMove = ttEntry.actualMove;
+        uint64 hash = board.getHash();
+        TTEntry &ttEntry = transpositionTable.entry(hash);
+        if (ttEntry.zobrist == hash) ttMove = ttEntry.actualMove;
 
         int max = -31000;
         MoveList moves = board.allMoves();
@@ -92,7 +93,7 @@ public:
             }
             if (score >= beta) {
                 if (alphaChanged) {
-                    transpositionTable.update(board.getHash(), currMove.getCode());
+                    transpositionTable.update(hash, currMove.getCode());
                 }
                 return max;
             }
@@ -105,7 +106,7 @@ public:
             return max + plies;
         }
         if (alphaChanged) {
-            transpositionTable.update(board.getHash(), currMove.getCode());
+            transpositionTable.update(hash, currMove.getCode());
         }
         return max;
     }
