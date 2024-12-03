@@ -110,7 +110,7 @@ public:
                 maxNodes = value;
         }
 
-        search.iterativeDeepening(game,maxDepth,maxNodes,startTime, time);
+        search.iterativeDeepening(game,maxDepth,maxNodes,startTime, time, true);
         std::cout << "bestmove " << search.getBestMove() << std::endl;
     }
 

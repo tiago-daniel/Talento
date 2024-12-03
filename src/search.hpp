@@ -15,6 +15,7 @@ inline std::atomic_bool stop = false;
 
 class Search {
     uint16 nodes = 0;
+    uint16 totalNodes = 0;
     Move currMove = Move();
     Move bestMove = Move();
     uint8 plies = 0;
@@ -113,7 +114,8 @@ public:
 
     void iterativeDeepening(Board &pos, const int64 maxDepth = std::numeric_limits<int64>::max(), const uint64 n = std::numeric_limits<uint64>::max(),
         std::chrono::time_point<std::chrono::steady_clock> startTime = std::chrono::steady_clock::now(),
-        uint64 milliseconds = std::numeric_limits<uint64>::max()) {
+        uint64 milliseconds = std::numeric_limits<uint64>::max(),
+        bool printResult = false) {
         int i = 1;
         while (!stop and i <= maxDepth and nodes <= n) {
             nodes = 0;
@@ -121,11 +123,14 @@ public:
             int score = search(pos, i,-std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), n, startTime, milliseconds);
             auto end = std::chrono::steady_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+            totalNodes += nodes;
             if (stop) {break;}
             bestMove = currMove;
-            std::cout << "info depth " << i << " nodes " << nodes << " nps " << nodes*1000000/duration.count()
-            << " score cp " << score << std::endl;
-            if (millisecondsElapsed(startTime) > milliseconds / 3) break;
+            if (printResult) {
+                std::cout   << "info depth " << i << " nodes " << nodes << " nps " << nodes*1000000/duration.count()
+                            << " score cp " << score << std::endl;
+            }
+            if (millisecondsElapsed(startTime) > milliseconds / 4) break;
             i++;
         }
     }
@@ -137,6 +142,10 @@ public:
 
     [[nodiscard]] uint16 getNodes() const {
         return nodes;
+    }
+
+    [[nodiscard]] uint16 getTotalNodes() const {
+        return totalNodes;
     }
 
     int qSearch(Board& board, int alpha, int beta, std::chrono::time_point<std::chrono::steady_clock> startTime,

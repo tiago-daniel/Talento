@@ -71,18 +71,12 @@ inline void bench(const int depth = 5) {
         auto board = Board(fen);
 
         const std::chrono::time_point<std::chrono::steady_clock> startTime = std::chrono::steady_clock::now();
-        search.search(
-            board,
-            depth,
-            std::numeric_limits<int>::min(),
-            std::numeric_limits<int>::max(),
-            std::numeric_limits<uint16>::max(),
-            startTime
-        );
+
+        search.iterativeDeepening(board,depth,std::numeric_limits<uint64>::max(),startTime);
 
         milliseconds += millisecondsElapsed(startTime);
     }
-    totalNodes = search.getNodes();
+    totalNodes = search.getTotalNodes();
     std::cout   << totalNodes << " nodes "
                 << totalNodes * 1000 / std::max(milliseconds, (uint64)1) << " nps "
                 << std::max(milliseconds /1000, (uint64)1) << " seconds"
