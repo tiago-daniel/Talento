@@ -10,7 +10,7 @@
 #include "bench.hpp"
 #include "search.hpp"
 
-#define ENGINE_NAME "Talento 0.2.0"
+#define ENGINE_NAME "Talento 0.3.0"
 
 constexpr int32 MAX_DEPTH = 99;
 
