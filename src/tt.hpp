@@ -7,13 +7,68 @@
 
 #include "utils.hpp"
 
+enum Bound {
+    NONE,
+    EXACT,
+    LOWER,
+    UPPER
+};
+
 struct TTEntry {
     uint64 zobrist = 0;
     uint16 actualMove = 0;
+    uint16 depthBound = 0;
+    int score = 0;
+
+    [[nodiscard]] uint16 depth() const{
+        return (depthBound & 0b1111111);
+    }
+
+    [[nodiscard]] Bound bound() const{
+        return Bound((depthBound >> 7) & 0b11);
+    }
+
+    void adjustScore(const uint16 ply) {
+        if (score <= - mateScore) {
+            score += ply;
+        }
+        else if (score >= mateScore) {
+            score -= ply;
+        }
+    }
+
+    void update(const uint64 newZobrist, const uint16 newMove, const Bound newBound, const uint16 newDepth,
+        const int newScore, const int ply) {
+            if (this->zobrist != zobrist
+                || newBound == EXACT
+                || this->depth() < newDepth){
+                    this->zobrist = newZobrist;
+
+                    this->depthBound = newDepth;
+                    this->depthBound |= (uint16)newBound << 7;
+
+                    if (newScore >= mateScore) {
+                        this->score = newScore + ply;
+                    }
+                    else if (newScore <= - mateScore) {
+                        this->score = newScore - ply;
+                    }
+                    else {
+                        this->score = newScore;
+                    }
+
+                    if (this->zobrist != newZobrist
+                        || this->actualMove == 0
+                        || newBound != UPPER) {
+                        this->actualMove = newMove;
+                    }
+                }
+        }
 };
 
 
 class TT {
+private:
     std::vector<TTEntry> transpositionTable;
 public:
 
@@ -23,10 +78,6 @@ public:
 
     explicit TT(const int64 hashSize = 32) {
         resize(hashSize);
-    }
-
-    TTEntry& entry(const uint64 zobristHash) {
-        return transpositionTable[index(zobristHash)];
     }
 
     void resize(int64 hashSize) {
@@ -44,12 +95,7 @@ public:
         transpositionTable.shrink_to_fit();
     }
 
-    void update(const uint64 zobrist, const uint16 move) {
-        transpositionTable[index(zobrist)].actualMove = move;
-        transpositionTable[index(zobrist)].zobrist = zobrist;
-    }
-
-    uint64 index(const uint64 zobristHash){
+    uint64 index(const uint64 zobristHash) const {
         return ((uint128)zobristHash * (uint128)transpositionTable.size()) >> 64;
     }
 
@@ -58,6 +104,14 @@ public:
                 << " MB"
                 << " (" << transpositionTable.size() << " entries)"
                 << std::endl;
+    }
+
+    TTEntry operator[](const uint64 hash) const{
+        return transpositionTable[index(hash)];
+    }
+
+    TTEntry& operator[](const uint64 hash){
+        return transpositionTable[index(hash)];
     }
 };
 

@@ -20,6 +20,10 @@ typedef uint_fast8_t uint8;
 typedef int64_t int64;
 typedef int32_t int32;
 
+#define infinity 32000
+#define mateValue 31000
+#define mateScore 30000
+
 
 inline uint64 Bit(int n) {
     if (!(n < 64 and n >= 0)) return 0;

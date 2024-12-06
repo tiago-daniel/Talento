@@ -62,14 +62,29 @@ public:
         if (depth == 0) return qSearch(board,alpha,beta,startTime,milliseconds);
 
         uint16 ttMove = 0;
-        uint64 hash = board.getHash();
-        TTEntry &ttEntry = transpositionTable.entry(hash);
-        if (ttEntry.zobrist == hash) ttMove = ttEntry.actualMove;
+        const bool pvNode = beta > alpha + 1 || plies == 0;
 
-        int max = -31000;
+        TTEntry &ttEntry = transpositionTable[board.getHash()];
+        const bool ttHit = board.getHash() == ttEntry.zobrist;
+
+        if (ttHit) {
+            ttEntry.adjustScore(plies);
+            ttMove = ttEntry.actualMove;
+
+            if (!pvNode
+            && ttEntry.depth() >= depth
+            && (ttEntry.bound() == EXACT
+            || (ttEntry.bound() == LOWER && ttEntry.score >= beta)
+            || (ttEntry.bound() == UPPER && ttEntry.score <= alpha))) {
+                return ttEntry.score;
+            }
+        }
+
+        Bound bound = UPPER;
+        int max = -infinity;
         MoveList moves = board.allMoves();
-        bool alphaChanged = false;
         MoveOrder::scoreMoves(moves,board,Move(ttMove));
+
         for (int i = 0 ;i <  moves.getSize(); i++) {
             std::swap(moves.getMoves()[i], moves.getMoves()[MoveOrder::indexHighestMove(moves,i)]);
             board.makeMove(moves.getMoves()[i]);
@@ -88,27 +103,25 @@ public:
                     currMove = moves.getMoves()[i];
                 }
                 if (max > alpha) {
+                    bound = EXACT;
                     alpha = max;
-                    alphaChanged = true;
                 }
             }
             if (score >= beta) {
-                if (alphaChanged) {
-                    transpositionTable.update(hash, currMove.getCode());
-                }
+                ttEntry.update(board.getHash(),
+                        currMove.getCode(), LOWER, depth,max,plies);
                 return max;
             }
         }
-        if (max == -31000) {
+        if (max == - infinity) {
             if (!board.kingCheck(board.getCurrentPlayer())) {
                 // STALEMATE
                 return 0;
             }
-            return max + plies;
+            return - mateValue + plies;
         }
-        if (alphaChanged) {
-            transpositionTable.update(hash, currMove.getCode());
-        }
+        ttEntry.update(board.getHash(), currMove.getCode(),
+            bound, depth,max, plies);
         return max;
     }
 
